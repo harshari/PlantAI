@@ -1,0 +1,51 @@
+state,abbr,weather,taxes,womens,cannabis,health,police,education,composite
+Alabama,AL,3,8,0,3,3,4,4,3.57
+Alaska,AK,2,10,7,9,4,1,3,5.14
+Arizona,AZ,2,7,8,9,6,2,4,5.43
+Arkansas,AR,4,6,0,4,3,3,4,3.43
+California,CA,5,2,10,10,8,5,8,6.86
+Colorado,CO,8,6,10,10,8,4,7,7.57
+Connecticut,CT,8,2,9,9,8,9,9,7.71
+Delaware,DE,7,8,8,8,7,7,6,7.29
+Florida,FL,1,9,2,5,5,4,6,4.57
+Georgia,GA,4,7,2,2,4,5,6,4.29
+Hawaii,HI,3,2,9,5,9,7,5,5.71
+Idaho,ID,7,8,0,0,5,4,4,4.00
+Illinois,IL,6,3,10,9,7,6,7,6.86
+Indiana,IN,6,7,1,1,5,5,6,4.43
+Iowa,IA,5,5,2,2,7,7,7,5.00
+Kansas,KS,4,5,6,0,6,4,6,4.43
+Kentucky,KY,6,6,0,3,4,4,5,4.00
+Louisiana,LA,2,7,0,4,3,3,4,3.29
+Maine,ME,7,3,9,9,7,8,7,7.14
+Maryland,MD,7,3,10,9,9,6,8,7.43
+Massachusetts,MA,8,4,10,9,10,9,10,8.57
+Michigan,MI,7,6,9,9,7,7,7,7.43
+Minnesota,MN,5,3,10,9,9,6,8,7.14
+Mississippi,MS,2,7,0,4,2,3,3,3.00
+Missouri,MO,5,7,6,9,6,3,6,6.00
+Montana,MT,6,8,7,9,5,3,5,6.14
+Nebraska,NE,5,4,3,4,7,6,6,5.00
+Nevada,NV,3,8,9,9,4,3,3,5.57
+New Hampshire,NH,8,8,6,5,8,8,8,7.29
+New Jersey,NJ,7,2,10,9,8,9,9,7.71
+New Mexico,NM,7,6,10,9,4,1,2,5.57
+New York,NY,8,1,10,9,8,8,8,7.43
+North Carolina,NC,7,7,3,3,7,6,7,5.71
+North Dakota,ND,3,8,0,4,6,5,5,4.43
+Ohio,OH,7,5,7,9,7,6,6,6.71
+Oklahoma,OK,3,7,0,6,3,2,3,3.43
+Oregon,OR,7,4,10,10,7,5,6,7.00
+Pennsylvania,PA,8,5,6,5,8,7,8,6.71
+Rhode Island,RI,8,4,9,9,8,9,7,7.71
+South Carolina,SC,4,7,2,1,4,4,5,3.86
+South Dakota,SD,4,9,0,4,6,4,5,4.57
+Tennessee,TN,6,9,0,2,5,4,5,4.43
+Texas,TX,2,7,0,2,5,4,6,3.71
+Utah,UT,7,7,3,4,8,5,7,5.86
+Vermont,VT,7,3,10,9,8,8,8,7.57
+Virginia,VA,7,6,7,7,7,7,8,7.00
+Washington,WA,7,6,10,10,8,6,7,7.71
+West Virginia,WV,7,6,1,4,3,3,3,3.86
+Wisconsin,WI,6,4,4,2,7,7,7,5.29
+Wyoming,WY,5,9,4,1,4,3,5,4.43

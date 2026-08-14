@@ -24,10 +24,23 @@ hover breakdowns for every state, and a colorblind-safe palette toggle.
 The default composite is the equal-weighted mean; the sliders in the page
 recompute it live with your own weights.
 
+## Second map: car-dwelling friendliness
+
+The page also includes an independent choropleth scoring how each state treats
+someone living out of their vehicle: greener = no statewide criminalization,
+legal protections for vehicle homes (e.g. Washington's homestead-act case law),
+safe-parking programs, tolerant rest areas/public land, and support services;
+redder = statewide criminalization (Tennessee's 2022 felony public-camping law,
+Texas's 2021 statewide ban, Florida's 2024 mandatory local bans, Kentucky's 2024
+repeat-offense felony). Each state's tooltip carries a one-line rationale.
+Day-to-day enforcement is mostly municipal — especially after *Grants Pass v.
+Johnson* (2024) — so verify the specific city.
+
 ## Files
 
-- `index.html` — the interactive report (map + bar chart + Pareto scatter + full table)
-- `states_scores.csv` — the underlying scores, one row per state, with the equal-weighted composite
+- `index.html` — the interactive report (two maps + bar chart + Pareto scatter + full table)
+- `states_scores.csv` — the wish-list scores, one row per state, with the equal-weighted composite
+- `car_dwelling_scores.csv` — the car-dwelling friendliness score and per-state rationale
 
 ## Method and caveats
 

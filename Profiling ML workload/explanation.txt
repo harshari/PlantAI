@@ -1,0 +1,149 @@
+PROFILING ML WORKLOAD — PROBABILISTIC DAG FOR SPECULATIVE DECODING
+===================================================================
+
+What this folder is
+-------------------
+A self-contained encoding of the workload-characterization half of the
+"Probabilistic Workload DAG -> Hardware Mapping" pipeline:
+
+  [Workload DAG] -> [Task placement] -> [Trace generation] -> [NoC sim
+      (fixed)         (BookSim / ns-3)] -> [Timing / contention metrics]
+                       ^________________ results feed back _____________|
+
+The DAG is generated ONCE from profiling and stays fixed across all
+floorplan/placement experiments; only the placement->trace->simulate half
+varies per hardware candidate. The trace produced here is deliberately
+LOGICAL (task-ID based): the placement layer remaps logical task IDs to
+physical chiplet IDs per floorplan candidate, so the floorplan search's
+inner loop never regenerates the trace.
+
+Reference model for all worked numbers: Muse Glimmer-30B (dense causal
+transformer, d_model=6656, 52 layers = 39 sliding-window "local" layers
+(window 2048) + 13 full-context "global" layers, GQA 32Q/2KV main model,
+32Q/8KV draft model, 5 draft layers, speculative block size 16, ~27.8B LM
+params). Swap the constants block in workload_dag.py for your target model.
+
+Files
+-----
+  explanation.txt   this file
+  workload_dag.py   DAG encoding + payload formulas + stochastic unrolling
+                    + traffic-equation solver + trace/figure generators
+  dag_figure.png    expected DAG (also dag_figure.svg) — regenerate with
+                    `python3 workload_dag.py`
+  trace_table.csv   one sampled logical trace (seed=7, alpha=0.75,
+                    prompt L0=1500, 100 output tokens, BF16)
+
+The DAG (see dag_figure.png)
+----------------------------
+  A (prefill)  ->  [ B (draft) -> C (verify) -> D (KV-commit) ]*  ->  exit
+
+  A  Prefill: 52-layer forward over the prompt (length L). Runs once.
+  B  Draft: 5-layer forward proposing a 16-token block. Flat cost
+     (sliding window only, no growth with context depth).
+  C  Verify: 52-layer forward checking the proposed block against the
+     full context in parallel.
+  D  KV-cache commit: accept k of the 16 proposed tokens.
+
+IMPORTANT — this is NOT a branching graph. Every edge fires with p=1.0 on
+every iteration: C->D always fires (at minimum one bonus token is appended
+even if the whole block is rejected), and D->B always fires until an
+EXTERNAL terminal condition (EOS / max length) ends the loop. The
+stochastic quantity is k, the number of tokens accepted per iteration —
+not which edge fires. The DAG is therefore a template graph plus a
+stochastic unrolling rule: each simulated request samples its own sequence
+of k values, giving a DISTRIBUTION of iteration counts and payload sizes.
+Run an ensemble of sampled unrollings through the NoC simulator to get a
+timing distribution, not a single number.
+
+Acceptance model (assumed — profiling pending)
+----------------------------------------------
+Per-token acceptance probability alpha; rejection sampling gives a
+truncated geometric:  P(k=j) = alpha^j (1-alpha) for j=0..15,
+P(k=16) = alpha^16.  Assumed bounds until profiled:
+
+  alpha   E[k]/block   P(full block)   loop iters / 100 output tokens
+  0.65      1.86          0.10%            ~54
+  0.75      2.97          1.0%             ~34   (nominal)
+  0.85      5.25          7.4%             ~19
+
+Replace with the measured alpha or, better, the full empirical
+k-histogram (real acceptance is not perfectly geometric).
+
+Payload formulas (BF16; halve for FP8, quarter for INT4)
+--------------------------------------------------------
+  KV bytes/token (main)  = 2 * 2 KV-heads * 128 * 52 layers * 2 B = 53,248 B
+  KV bytes/token (draft) = 2 * 8 KV-heads * 128 *  5 layers * 2 B = 20,480 B
+  EXT->A  prompt token IDs, ~4 B/token
+  A->B    last-token hidden state, d_model * 2 B = 13,312 B
+  A->D    one-time prefill KV publish: (39*min(L,2048) + 13*L) * 1,024 B
+          — 79.9 MB at L=1500; 706.5 MB at L=100k. Grows linearly with L,
+          so it gets its own edge instead of a generic "hidden state" edge.
+  B->C    proposed block: token IDs + probabilities, ~128 B
+  C->D    k * 53,248 B + 13,312 B context carry (expected: E[k]*53248+13312)
+  D->B    loop-continue control, ~64 B (assumption)
+
+Invariant worth checking in any generated trace: total C->D KV bytes over
+a full generation is independent of alpha — every accepted token writes
+its KV exactly once, so total = output_length * KV_bytes/token (plus the
+per-iteration 13,312 B carry, which does scale with iteration count).
+alpha changes burst SHAPE (many small vs. fewer large bursts), which
+matters for NoC contention even though total bytes are constant.
+
+Compute formulas
+----------------
+  A: 5.0e10*L + 346112*L^2   (quadratic term = 13 global-attention layers;
+                              40.9% of prefill FLOPs by L=100k)
+  B: 16 * (TBD)              (draft FFN intermediate width unpublished —
+                              inspect GGUF tensor shapes to resolve)
+  C: 16*5.0e10 + 5537792*L   (verify cost grows with context position L,
+                              NOT constant per iteration)
+  D: ~0                      (bookkeeping)
+
+Trace table format (trace_table.csv)
+------------------------------------
+One row per edge firing. Columns:
+  event_id           global ordering (logical time; the placement/timing
+                     layer assigns real injection cycles)
+  request_id         for multi-request ensembles
+  iteration          0 = prefill phase, 1..N = decode loop iterations
+  src_task/dst_task  LOGICAL task IDs (A/B/C/D, EXT, EXIT) — remapped to
+                     physical chiplet IDs by the placement layer
+  payload_bytes      from the formulas above, k sampled per iteration
+  L_context          context position when the edge fires (drives C's
+                     compute and A's writeout)
+  k_accepted         sampled k for C->D / D->B rows, blank elsewhere
+  cum_output_tokens  progress toward the terminal condition
+  note               human-readable edge description
+
+The shipped trace (seed 7): 87 events, 28 iterations, mean k=3.86,
+final L=1608, prefill KV publish 79,872,000 B, total C->D 6,123,520 B.
+A 1000-request ensemble at alpha=0.75 (prompt lengths drawn from the
+Section-6 agent-heavy distribution) gives: iterations mean 34.6, p50 34,
+p95 46, max 61 — matching the ~34-iterations/100-tokens prediction.
+
+Reproducing / sweeping
+----------------------
+  python3 workload_dag.py                             defaults (above)
+  python3 workload_dag.py --alpha 0.85 --prompt 16384 --out-tokens 256
+  python3 workload_dag.py --precision int4            KV bytes / 4
+  python3 workload_dag.py --ensemble 1000             distribution summary
+The script self-tests the traffic-equation solver on the Section-2.1 toy
+example (V_C = 1/(1-0.2) = 1.25 under a 20% retry loop) at every run.
+
+Caveats carried over from the working notes
+-------------------------------------------
+- alpha values are assumed bounds, not profiled; replace with measured
+  k-histograms when available.
+- Weight precision != KV/activation precision: 4-bit weight quant does not
+  imply INT4 KV. Confirm engine config before choosing --precision.
+- Inter-node traffic (this trace) answers "is the NoC a bottleneck?" (no —
+  bursts stay under ~300 KB even at L=100k). It does NOT capture
+  weight-streaming bandwidth, which dominates at batch=1 and is the real
+  memory-bound axis; model that separately per Section 7 of the notes.
+- Exponential-service queueing math is a poor fit for near-deterministic
+  kernel latencies; prefer discrete-event simulation with profiled
+  service-time distributions for the timing layer.
+- The prompt-length distribution's long-context buckets rest on a
+  synthetic agent-heavy model (arxiv.org/html/2603.16054), not a measured
+  trace; Azure Splitwise traces (Patel et al., ISCA 2024) anchor the short
+  buckets. Override with real deployment logs when available.

@@ -1,0 +1,205 @@
+Subject: From a HuggingFace model card to a probabilistic hardware-mapping DAG — two worked examples
+
+Hi all,
+
+This is a walkthrough of a method for turning any HuggingFace model into a
+kernel-level, probabilistic workload DAG — the input format our floorplan /
+chiplet-placement search needs. The point of this email is that the method
+is general: it isn't tuned to one model. Below are two worked examples that
+are deliberately different in shape, plus the general recipe both of them
+follow, so you can go run this on a model of your own choosing.
+
+One correction up front, because it's easy to get wrong: a DAG is not "one
+DAG per probability." A workload's DAG TEMPLATE (its nodes and edges) can
+have zero, one, or many independent stochastic decision points, and — as
+you'll see in example 2 — even multiple instances of what looks like "the
+same layer type" inside one model can differ in whether they're stochastic
+at all. Sweeping the PARAMETER of one distribution (e.g. trying alpha =
+0.65 / 0.75 / 0.85 below) gives you multiple OPERATING POINTS of the same
+template, not multiple templates. A genuinely different workload — a
+different inference algorithm, a different task type — gives you a
+different template shape. Both examples below make this concrete.
+
+THE GENERAL METHOD, IN FOUR STEPS
+
+1. Pull static architecture inputs from config.json (hidden size, layer
+   count, attention heads / KV heads / head dim, FFN width, activation
+   function, attention pattern, vocab size, precision). All deterministic —
+   same for every forward pass, no probability involved yet.
+
+2. Decompose each repeating block into kernels — a mechanical recipe once
+   step 1 is known: norm -> qkv_proj[matmul] -> attention -> out_proj[matmul]
+   -> norm -> ffn[matmul(s)+activation] -> ffn_down[matmul]. Each kernel
+   gets an op type (matmul / attention / elementwise / norm / lookup), a
+   FLOPs formula, and a bytes formula.
+
+3. Separate communication into three kinds, because conflating them is the
+   classic mistake: weight bytes (read from local HBM, ~once per forward
+   pass, dominates at low batch), local I/O bytes (activation/KV touched
+   on-chip), and inter-node bytes (what actually crosses the interconnect
+   between DAG nodes — the only one that feeds a NoC simulator).
+
+4. Find the workload's stochastic decision points — and this step is NOT in
+   config.json. It comes from the inference algorithm, not the static
+   architecture, and needs either a known closed form or actual profiling.
+
+Everything below is a worked instance of these four steps.
+
+
+EXAMPLE 1 — MUSE GLIMMER-30B (speculative decoding)
+
+What it is: a dense causal transformer with an attached perception encoder,
+27.8B parameters, ALL of them activated on every forward pass (dense, not
+MoE). 52 layers, hidden size 6656, GQA attention (32 query heads / 2 KV
+heads) with a repeating [local, local, local, global] pattern — 39 layers
+use a 2048-token sliding window, 13 use full-context attention. It ships
+with a small 5-layer draft model (32Q/8KV heads) attached for speculative
+decoding, proposing blocks of 16 tokens at a time.
+
+Why it's probabilistic: speculative decoding works by having the small
+draft model guess up to 16 tokens, then having the full model verify that
+guess in parallel and accept a prefix of it. The number of tokens accepted
+per block, k, is a random variable — governed by rejection sampling, with a
+closed form: P(k=j) = alpha^j * (1-alpha) for j=0..15, P(k=16) = alpha^16,
+where alpha is the per-token acceptance probability. That's the ENTIRE
+stochastic surface of this workload: every edge in the DAG fires with
+probability 1 (the loop always continues until EOS/max-length is hit); the
+only randomness is in k, i.e. in PAYLOAD SIZE, not in which edge fires. We
+don't have a profiled alpha yet, so we swept three assumed bounds
+(0.65 / 0.75 / 0.85) as a sensitivity study — three operating points of the
+SAME template, not three different DAGs.
+
+The DAG: A (prefill, once) -> [B (draft) -> C (verify) -> D (commit)]*,
+looping until EOS. Kernel-level, task A's first attention layer decomposes
+into: rmsnorm -> qkv_proj[matmul, ~6.1e7 FLOPs/token] -> attention
+[windowed, causal] -> out_proj[matmul] -> rmsnorm -> ffn_gate_up[matmul,
+SwiGLU] -> swiglu[elementwise] -> ffn_down[matmul], repeated 39x for local
+layers and 13x for global, all in BF16.
+
+One correction the kernel-level pass made to an earlier task-level model:
+task B (draft) is not one parallel pass over 16 positions — it's 16
+SEQUENTIAL micro-steps, because the draft model is autoregressive within
+itself and can't know token 2 before it's generated token 1. That matters
+for placement: B's steps are serially dependent, so there's limited value
+pipelining across B's layers, whereas C's 52 layers over 16 positions IN
+PARALLEL are a much better pipelining target.
+
+What the compute-vs-communication analysis actually found: at short context
+(L=1,500 tokens), task A (prefill) is compute-bound — its FFN matmul
+dominates. Tasks B and C are bandwidth-bound instead — streaming the full
+weight matrix from HBM for one token at a time is the classic batch=1
+memory-bound case. At long context (L=100,000), task A's DOMINANT KERNEL
+ITSELF FLIPS from FFN-compute to attention-bandwidth, because reading back
+the growing KV cache becomes the larger transfer than any weight matrix.
+So "compute vs. communication" isn't a fixed property of a task — it
+depends on context length, and the KIND of bottleneck can change, not just
+its magnitude.
+
+
+EXAMPLE 2 — DEEPSEEK-V4-FLASH (MoE + hybrid attention + speculative decoding)
+
+What it is: a Mixture-of-Experts model, 284B total parameters but only 13B
+ACTIVATED per token (the other ~271B sit idle for any given token — this
+is the tell that a model is MoE, versus Glimmer's dense 27.8B where
+everything fires every time). 43 layers, hidden size 4096. Every layer has
+an MoE feed-forward block: 1 shared expert (always fires) plus 256 routed
+experts (256 of them exist; only 6 are chosen per token). Supports a
+1-million-token context via a novel hybrid attention scheme (more below).
+Ships a multi-token-prediction module that inference engines like vLLM
+attach as a speculative-decoding drafter (branded "DSpark" on the model
+card), proposing 7 tokens per block instead of Glimmer's 16.
+
+Why it's probabilistic — and this is the interesting part, because there
+are TWO independent stochastic layers here, not one, and they're a
+different KIND of randomness than example 1's:
+
+  (a) Expert routing. For a token at one of these MoE layers, "which 6 of
+      256 experts does it go to" is a genuine categorical distribution over
+      256 outcomes — not a scalar like Glimmer's alpha. It's a REAL
+      structural branch: which edge fires next, not just how big the
+      payload is. This is exactly the traffic-equation machinery (V_i =
+      sum_j V_j * p(j->i)) from the toy example in the original notes,
+      which Glimmer's workload turned out not to need since every one of
+      its edges fires at probability 1. This is the case that machinery
+      was actually built for.
+
+  (b) But — and this is the nuance worth flagging to the class — NOT every
+      MoE layer in this model is stochastic. The first 3 MoE layers use
+      HASH ROUTING: which expert a token goes to is a deterministic
+      function of the token ID, i.e. a lookup, not a probability at all.
+      Only the remaining 40 layers use learned, data-dependent routing that
+      actually needs profiling (a routing histogram) to characterize. So
+      "this model has MoE layers" is not sufficient to know whether a given
+      layer instance is stochastic — you have to check which routing
+      mechanism is attached to THAT instance. Two instances of "the same
+      layer type" can differ in whether they're random at all.
+
+  (c) The DSpark/MTP speculative decoding adds a third, Glimmer-shaped
+      stochastic quantity (accepted-token count k) on top of (a) and (b),
+      if you're modeling this model's actual inference-serving DAG rather
+      than just its architecture.
+
+Two structural surprises this model forced into the kernel vocabulary that
+Glimmer never needed:
+
+  Multi-stage attention. Glimmer's attention kernel was one fused op
+  (score -> softmax -> weighted sum). DeepSeek-V4's hybrid CSA/HCA attention
+  is a PIPELINE: compress the KV cache (every 4 tokens -> 1 entry) ->
+  compute lightweight "indexer" scores in FP4 precision -> select the top-k
+  compressed entries (512 of them) -> concatenate with a 128-token
+  uncompressed sliding window -> run core attention (MQA-style) -> a
+  grouped output projection. Six kernels where Glimmer needed one. Useful
+  validation: the paper gives its OWN explicit roofline formula for the
+  MoE communication/compute tradeoff — compute is hidden by communication
+  as long as C/B <= 2*d FLOPs/Byte (d = expert FFN width) — which is
+  exactly the compute-vs-bandwidth question our framework asks generically,
+  worked out by hand by the DeepSeek team for one specific kernel. Good
+  independent confirmation that it's the right question to ask.
+
+  mHC (their replacement for the residual/skip connection) doesn't fit our
+  kernel vocabulary AT ALL. It's 20 sequential Sinkhorn-Knopp normalization
+  steps on a tiny 4x4 matrix per layer — maybe 2,000 FLOPs total, utterly
+  negligible next to a 500M-FLOP FFN. But it's a DEPENDENCY CHAIN: step t
+  needs step t-1's result. On real hardware that means its cost isn't FLOPs
+  or bandwidth at all — it's 20 sequential round-trips. Done naively (each
+  step round-tripping to HBM), you'd pay ~20x a full memory-latency penalty
+  for a computation that's otherwise microseconds of work. Done right — the
+  whole 4x4 matrix kept resident in registers/shared memory for all 20
+  steps, one kernel launch — it finishes in nanoseconds, and batched across
+  every token in the flight simultaneously to fill the hardware's parallel
+  width. DeepSeek's own paper confirms this is exactly what they did
+  ("fused kernels of mHC for both training and inference"), holding its
+  total overhead to 6.7% of the pipeline stage despite 20 sequential steps.
+  The teaching point: this needs a NEW op type in the schema — something
+  like "iterative_normalize" — because its bottleneck axis (sequential
+  depth x per-step round-trip latency) is a third resource category
+  alongside compute-bound and bandwidth-bound, and the fix for it (kernel
+  fusion / on-chip residency) is a different lever than "add more FLOPs" or
+  "add more bandwidth." It also has a placement consequence neither example
+  1 nor a generic bandwidth analysis would tell you: this kernel must be
+  co-located with its transformer block — any inter-chiplet hop reintroduces
+  the exact round-trip penalty fusion was solving, regardless of how few
+  bytes it's carrying. That's a "minimize hops," not "minimize bytes," rule.
+
+
+TAKEAWAYS TO CARRY INTO YOUR OWN MODEL
+
+- Config.json gives you the deterministic half (step 1-3 above) for free.
+  The stochastic half (step 4) is never in the config — it's a property of
+  the INFERENCE ALGORITHM, and usually needs either a published closed form
+  (like Glimmer's rejection-sampling geometric) or actual profiling (like
+  DeepSeek's expert-routing histogram).
+- Count the independent stochastic decision points before you start coding
+  — it can be zero (a vision encoder, single deterministic pass), one
+  (Glimmer's alpha), or several simultaneously (DeepSeek's routing + MTP).
+- Don't assume every instance of a layer TYPE shares the same probabilistic
+  behavior — DeepSeek's hash-routed vs. learned-routed MoE layers are the
+  cleanest counterexample you'll find.
+- When a kernel's FLOPs and bytes both look negligible, that doesn't mean
+  it's negligible on hardware — check whether it's a sequential dependency
+  chain instead (mHC). That's a resource axis roofline math doesn't cover.
+
+Happy to walk through building either of these out fully in code, or to do
+the same pass live on a model one of you picks — MoE, dense, vision, or
+otherwise. The method doesn't change; only the numbers in step 1 and the
+shape of step 4 do.

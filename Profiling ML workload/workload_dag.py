@@ -131,8 +131,13 @@ EDGES = [
 # Acceptance distribution (Section 2.3): truncated geometric
 # ---------------------------------------------------------------------------
 
+def acceptance_pmf(alpha: float) -> list:
+    """Full distribution: P(k=j) = alpha^j*(1-alpha), j=0..15; P(k=16)=alpha^16."""
+    return [alpha**j * (1 - alpha) for j in range(BLOCK)] + [alpha**BLOCK]
+
+
 def sample_k(alpha: float, rng: random.Random) -> int:
-    """P(k=j) = alpha^j * (1-alpha) for j=0..15;  P(k=16) = alpha^16."""
+    """Draw from acceptance_pmf by sequential accept/reject."""
     for j in range(BLOCK):
         if rng.random() >= alpha:
             return j
@@ -378,6 +383,101 @@ def draw_figure(basename: str = "dag_figure") -> None:
     fig.savefig(f"{basename}.svg", facecolor="white")
     plt.close(fig)
 
+def write_acceptance_pmf_csv(path: str = "acceptance_pmf.csv",
+                             alphas=(0.65, 0.75, 0.85)) -> None:
+    """The acceptance distribution as data: P(k=j) per alpha bound."""
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["k"] + [f"P(k)_alpha_{a}" for a in alphas])
+        pmfs = [acceptance_pmf(a) for a in alphas]
+        for j in range(BLOCK + 1):
+            w.writerow([j] + [f"{p[j]:.6g}" for p in pmfs])
+        w.writerow(["E[k]"] + [f"{expected_k(a):.4g}" for a in alphas])
+
+
+def draw_distributions(basename: str = "distributions", out_tokens: int = 100,
+                       ensemble_n: int = 2000, seed: int = 7) -> None:
+    """The three probability distributions that drive the stochastic unrolling:
+    (1) acceptance PMF P(k) at the assumed alpha bounds (Section 2.3);
+    (2) prompt-length distribution (Section 6, agent-heavy anchor);
+    (3) resulting iteration-count distribution per request (sampled)."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    ink, muted = "#0b0b0b", "#52514e"
+    alphas = [0.65, 0.75, 0.85]
+    colors = ["#2a78d6", "#eb6834", "#1baf7a"]   # categorical slots 1-3
+
+    fig = plt.figure(figsize=(14, 8.6))
+    gs = fig.add_gridspec(2, 3, height_ratios=[1, 1], hspace=0.42, wspace=0.25)
+
+    # -- top row: acceptance PMF, one small multiple per alpha (shared y) ----
+    for i, (a, c) in enumerate(zip(alphas, colors)):
+        ax = fig.add_subplot(gs[0, i])
+        pmf = acceptance_pmf(a)
+        ax.bar(range(BLOCK + 1), pmf, color=c, width=0.72)
+        ax.set_ylim(0, 0.37)
+        ax.set_title(f"alpha = {a}   (E[k] = {expected_k(a):.2f})",
+                     fontsize=11, color=ink)
+        ax.set_xlabel("k accepted per block", fontsize=9, color=muted)
+        if i == 0:
+            ax.set_ylabel("P(k)", fontsize=9, color=muted)
+        ax.set_xticks([0, 4, 8, 12, 16])
+        ax.tick_params(labelsize=8.5, colors=muted)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.annotate(f"P(k=16) = {pmf[BLOCK]:.1%}\n(whole block accepted)",
+                    xy=(16, pmf[BLOCK]), xytext=(9.2, 0.30), fontsize=8.2,
+                    color=muted, arrowprops=dict(arrowstyle="->", color=muted, lw=0.8))
+    fig.text(0.5, 0.965, "Acceptance distribution  P(k=j) = alpha^j (1-alpha),  "
+             "j=0..15;   P(k=16) = alpha^16   (assumed bounds - profiling pending)",
+             ha="center", fontsize=12, color=ink)
+
+    # -- bottom left: prompt-length distribution (Section 6) -----------------
+    axp = fig.add_subplot(gs[1, 0])
+    labels = ["512-2K", "2K-4K", "4K-16K", "16K-32K", "32K-100K"]
+    shares = [s * 100 for s, _, _ in PROMPT_BUCKETS]
+    axp.bar(range(len(shares)), shares, color="#2a78d6", width=0.66)
+    for i, s in enumerate(shares):
+        axp.text(i, s + 1.1, f"{s:.0f}%", ha="center", fontsize=9, color=ink)
+    axp.set_xticks(range(len(labels)))
+    axp.set_xticklabels(labels, fontsize=8.2, rotation=20)
+    axp.set_ylim(0, 48)
+    axp.set_ylabel("share of requests (%)", fontsize=9, color=muted)
+    axp.set_title("Prompt-length distribution\n(Section 6, agent-heavy anchor; "
+                  "log-uniform in bucket)", fontsize=10, color=ink)
+    axp.tick_params(labelsize=8.5, colors=muted)
+    axp.spines[["top", "right"]].set_visible(False)
+
+    # -- bottom middle+right: iteration-count distribution (sampled) ---------
+    axh = fig.add_subplot(gs[1, 1:])
+    rng = random.Random(seed)
+    for a, c in zip(alphas, colors):
+        counts = {}
+        for _ in range(ensemble_n):
+            produced, iters = 0, 0
+            while produced < out_tokens:
+                iters += 1
+                produced += sample_k(a, rng)
+            counts[iters] = counts.get(iters, 0) + 1
+        xs = sorted(counts)
+        ys = [counts[x] / ensemble_n for x in xs]
+        axh.plot(xs, ys, drawstyle="steps-mid", color=c, lw=1.8,
+                 label=f"alpha={a}  (mean {sum(x*counts[x] for x in xs)/ensemble_n:.1f})")
+    axh.set_xlabel(f"loop iterations to produce {out_tokens} output tokens",
+                   fontsize=9, color=muted)
+    axh.set_ylabel("probability", fontsize=9, color=muted)
+    axh.set_title(f"Resulting iteration-count distribution per request "
+                  f"({ensemble_n} sampled unrollings)", fontsize=10, color=ink)
+    axh.legend(fontsize=9, frameon=False)
+    axh.tick_params(labelsize=8.5, colors=muted)
+    axh.spines[["top", "right"]].set_visible(False)
+
+    fig.savefig(f"{basename}.png", dpi=200, facecolor="white", bbox_inches="tight")
+    fig.savefig(f"{basename}.svg", facecolor="white", bbox_inches="tight")
+    plt.close(fig)
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -440,6 +540,9 @@ def main() -> None:
     if args.figure:
         draw_figure(args.figure)
         print(f"[figure]   {args.figure}.png / {args.figure}.svg")
+        draw_distributions(out_tokens=args.out_tokens, seed=args.seed)
+        write_acceptance_pmf_csv()
+        print("[dists]    distributions.png / distributions.svg / acceptance_pmf.csv")
 
 
 if __name__ == "__main__":

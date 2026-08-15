@@ -32,6 +32,12 @@ Files
                     `python3 workload_dag.py`
   trace_table.csv   one sampled logical trace (seed=7, alpha=0.75,
                     prompt L0=1500, 100 output tokens, BF16)
+  distributions.png the three probability distributions driving the
+                    stochastic unrolling (also .svg): acceptance PMF P(k)
+                    at alpha = 0.65/0.75/0.85, the Section-6 prompt-length
+                    distribution, and the resulting iteration-count
+                    distribution over 2000 sampled unrollings
+  acceptance_pmf.csv  P(k=j) per alpha bound as data, plus E[k] row
 
 The DAG (see dag_figure.png)
 ----------------------------

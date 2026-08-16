@@ -1,0 +1,15 @@
+# anynet topology -- one router per physical chiplet, star-connected
+# through a shared hub router. router <id> node <chiplet id attached>
+# link router <a> router <b>  -- bidirectional link between two routers.
+# CHECK exact keyword syntax against your BookSim version before use.
+router 0 node 0
+router 1 node 1
+router 2 node 2
+router 3 node 3
+router 4 node 4
+router 5 node
+link router 0 router 5
+link router 1 router 5
+link router 2 router 5
+link router 3 router 5
+link router 4 router 5

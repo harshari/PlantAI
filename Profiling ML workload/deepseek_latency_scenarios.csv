@@ -1,0 +1,133 @@
+kernel_id,task,context_regime,scenario,probability,latency_ms_per_instance,bound_type,expected_latency_ms_per_instance,expected_total_latency_ms_all_instances
+ATTN.swa.qkv_proj,ATTN,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,0.50344,bandwidth,0.7451,1.4902
+ATTN.swa.qkv_proj,ATTN,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,1.309,bandwidth,0.7451,1.4902
+ATTN.swa.attention,ATTN,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,8.3886e-05,compute,0.00012262,0.00024524
+ATTN.swa.attention,ATTN,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.00021299,bandwidth,0.00012262,0.00024524
+ATTN.swa.out_proj,ATTN,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,0.16782,bandwidth,0.24837,0.49674
+ATTN.swa.out_proj,ATTN,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.43633,bandwidth,0.24837,0.49674
+ATTN.csa.kv_compress,ATTN,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,0.01049,bandwidth,0.015525,0.32602
+ATTN.csa.kv_compress,ATTN,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.027273,bandwidth,0.015525,0.32602
+ATTN.csa.indexer_proj,ATTN,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,0.003936,bandwidth,0.0058253,0.12233
+ATTN.csa.indexer_proj,ATTN,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.010234,bandwidth,0.0058253,0.12233
+ATTN.csa.indexer_score,ATTN,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,3.072e-05,compute,3.3204e-05,0.00069728
+ATTN.csa.indexer_score,ATTN,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,3.9e-05,bandwidth,3.3204e-05,0.00069728
+ATTN.csa.topk_select,ATTN,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,1.875e-06,bandwidth,2.775e-06,5.8275e-05
+ATTN.csa.topk_select,ATTN,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,4.875e-06,bandwidth,2.775e-06,5.8275e-05
+ATTN.csa.core_attention,ATTN,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,0.042353,bandwidth,0.062682,1.3163
+ATTN.csa.core_attention,ATTN,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.11012,bandwidth,0.062682,1.3163
+ATTN.csa.grouped_out_proj,ATTN,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,0.083932,bandwidth,0.12422,2.6086
+ATTN.csa.grouped_out_proj,ATTN,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.21822,bandwidth,0.12422,2.6086
+ATTN.hca.kv_compress,ATTN,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,0.0052461,bandwidth,0.0077642,0.15528
+ATTN.hca.kv_compress,ATTN,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.01364,bandwidth,0.0077642,0.15528
+ATTN.hca.core_attention,ATTN,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,0.042032,bandwidth,0.062208,1.2442
+ATTN.hca.core_attention,ATTN,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.10928,bandwidth,0.062208,1.2442
+ATTN.hca.grouped_out_proj,ATTN,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,0.083932,bandwidth,0.12422,2.4844
+ATTN.hca.grouped_out_proj,ATTN,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.21822,bandwidth,0.12422,2.4844
+MOE.shared_expert_ffn,MOE,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,0.031465,bandwidth,0.046568,2.0024
+MOE.shared_expert_ffn,MOE,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.081809,bandwidth,0.046568,2.0024
+MOE.router_learned,MOE,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,0.0013162,bandwidth,0.0019479,0.077917
+MOE.router_learned,MOE,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.003422,bandwidth,0.0019479,0.077917
+MOE.router_learned_select,MOE,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,6.4e-07,bandwidth,9.472e-07,3.7888e-05
+MOE.router_learned_select,MOE,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,1.664e-06,bandwidth,9.472e-07,3.7888e-05
+MOE.routed_expert_ffn_learned,MOE,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,0.007872,bandwidth,0.011651,2.7961
+MOE.routed_expert_ffn_learned,MOE,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.020467,bandwidth,0.011651,2.7961
+MOE.router_hash,MOE,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,2.5e-09,bandwidth,3.7e-09,1.11e-08
+MOE.router_hash,MOE,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,6.5e-09,bandwidth,3.7e-09,1.11e-08
+MOE.routed_expert_ffn_hash,MOE,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,0.007872,bandwidth,0.011651,0.20971
+MOE.routed_expert_ffn_hash,MOE,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.020467,bandwidth,0.011651,0.20971
+MHC.sinkhorn_iterate,MHC,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,1.6e-07,bandwidth,2.368e-07,1.0182e-05
+MHC.sinkhorn_iterate,MHC,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,4.16e-07,bandwidth,2.368e-07,1.0182e-05
+OUT.embed_lookup,OUT,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,1.024e-05,bandwidth,1.5155e-05,1.5155e-05
+OUT.embed_lookup,OUT,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,2.6624e-05,bandwidth,1.5155e-05,1.5155e-05
+OUT.lm_head,OUT,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,0.65553,bandwidth,0.97018,0.97018
+OUT.lm_head,OUT,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,1.7044,bandwidth,0.97018,0.97018
+OUT.mtp_extra_head,OUT,short_chat_L1500,uncontended: exclusive HBM channel / NoC link access,0.70,0.65553,bandwidth,0.97018,0.97018
+OUT.mtp_extra_head,OUT,short_chat_L1500,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,1.7044,bandwidth,0.97018,0.97018
+ATTN.swa.qkv_proj,ATTN,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.50344,bandwidth,0.7451,1.4902
+ATTN.swa.qkv_proj,ATTN,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,1.309,bandwidth,0.7451,1.4902
+ATTN.swa.attention,ATTN,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,8.3886e-05,compute,0.00012262,0.00024524
+ATTN.swa.attention,ATTN,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.00021299,bandwidth,0.00012262,0.00024524
+ATTN.swa.out_proj,ATTN,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.16782,bandwidth,0.24837,0.49674
+ATTN.swa.out_proj,ATTN,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.43633,bandwidth,0.24837,0.49674
+ATTN.csa.kv_compress,ATTN,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.01049,bandwidth,0.015525,0.32602
+ATTN.csa.kv_compress,ATTN,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.027273,bandwidth,0.015525,0.32602
+ATTN.csa.indexer_proj,ATTN,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.003936,bandwidth,0.0058253,0.12233
+ATTN.csa.indexer_proj,ATTN,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.010234,bandwidth,0.0058253,0.12233
+ATTN.csa.indexer_score,ATTN,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.0026214,compute,0.0028334,0.059502
+ATTN.csa.indexer_score,ATTN,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.003328,bandwidth,0.0028334,0.059502
+ATTN.csa.topk_select,ATTN,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.00016,bandwidth,0.0002368,0.0049728
+ATTN.csa.topk_select,ATTN,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.000416,bandwidth,0.0002368,0.0049728
+ATTN.csa.core_attention,ATTN,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.042353,bandwidth,0.062682,1.3163
+ATTN.csa.core_attention,ATTN,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.11012,bandwidth,0.062682,1.3163
+ATTN.csa.grouped_out_proj,ATTN,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.083932,bandwidth,0.12422,2.6086
+ATTN.csa.grouped_out_proj,ATTN,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.21822,bandwidth,0.12422,2.6086
+ATTN.hca.kv_compress,ATTN,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.0052461,bandwidth,0.0077642,0.15528
+ATTN.hca.kv_compress,ATTN,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.01364,bandwidth,0.0077642,0.15528
+ATTN.hca.core_attention,ATTN,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.042665,bandwidth,0.063144,1.2629
+ATTN.hca.core_attention,ATTN,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.11093,bandwidth,0.063144,1.2629
+ATTN.hca.grouped_out_proj,ATTN,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.083932,bandwidth,0.12422,2.4844
+ATTN.hca.grouped_out_proj,ATTN,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.21822,bandwidth,0.12422,2.4844
+MOE.shared_expert_ffn,MOE,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.031465,bandwidth,0.046568,2.0024
+MOE.shared_expert_ffn,MOE,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.081809,bandwidth,0.046568,2.0024
+MOE.router_learned,MOE,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.0013162,bandwidth,0.0019479,0.077917
+MOE.router_learned,MOE,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.003422,bandwidth,0.0019479,0.077917
+MOE.router_learned_select,MOE,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,6.4e-07,bandwidth,9.472e-07,3.7888e-05
+MOE.router_learned_select,MOE,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,1.664e-06,bandwidth,9.472e-07,3.7888e-05
+MOE.routed_expert_ffn_learned,MOE,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.007872,bandwidth,0.011651,2.7961
+MOE.routed_expert_ffn_learned,MOE,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.020467,bandwidth,0.011651,2.7961
+MOE.router_hash,MOE,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,2.5e-09,bandwidth,3.7e-09,1.11e-08
+MOE.router_hash,MOE,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,6.5e-09,bandwidth,3.7e-09,1.11e-08
+MOE.routed_expert_ffn_hash,MOE,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.007872,bandwidth,0.011651,0.20971
+MOE.routed_expert_ffn_hash,MOE,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.020467,bandwidth,0.011651,0.20971
+MHC.sinkhorn_iterate,MHC,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,1.6e-07,bandwidth,2.368e-07,1.0182e-05
+MHC.sinkhorn_iterate,MHC,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,4.16e-07,bandwidth,2.368e-07,1.0182e-05
+OUT.embed_lookup,OUT,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,1.024e-05,bandwidth,1.5155e-05,1.5155e-05
+OUT.embed_lookup,OUT,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,2.6624e-05,bandwidth,1.5155e-05,1.5155e-05
+OUT.lm_head,OUT,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.65553,bandwidth,0.97018,0.97018
+OUT.lm_head,OUT,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,1.7044,bandwidth,0.97018,0.97018
+OUT.mtp_extra_head,OUT,long_agent_L128000,uncontended: exclusive HBM channel / NoC link access,0.70,0.65553,bandwidth,0.97018,0.97018
+OUT.mtp_extra_head,OUT,long_agent_L128000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,1.7044,bandwidth,0.97018,0.97018
+ATTN.swa.qkv_proj,ATTN,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.50344,bandwidth,0.7451,1.4902
+ATTN.swa.qkv_proj,ATTN,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,1.309,bandwidth,0.7451,1.4902
+ATTN.swa.attention,ATTN,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,8.3886e-05,compute,0.00012262,0.00024524
+ATTN.swa.attention,ATTN,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.00021299,bandwidth,0.00012262,0.00024524
+ATTN.swa.out_proj,ATTN,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.16782,bandwidth,0.24837,0.49674
+ATTN.swa.out_proj,ATTN,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.43633,bandwidth,0.24837,0.49674
+ATTN.csa.kv_compress,ATTN,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.01049,bandwidth,0.015525,0.32602
+ATTN.csa.kv_compress,ATTN,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.027273,bandwidth,0.015525,0.32602
+ATTN.csa.indexer_proj,ATTN,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.003936,bandwidth,0.0058253,0.12233
+ATTN.csa.indexer_proj,ATTN,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.010234,bandwidth,0.0058253,0.12233
+ATTN.csa.indexer_score,ATTN,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.02048,compute,0.022136,0.46486
+ATTN.csa.indexer_score,ATTN,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.026,bandwidth,0.022136,0.46486
+ATTN.csa.topk_select,ATTN,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.00125,bandwidth,0.00185,0.03885
+ATTN.csa.topk_select,ATTN,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.00325,bandwidth,0.00185,0.03885
+ATTN.csa.core_attention,ATTN,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.042353,bandwidth,0.062682,1.3163
+ATTN.csa.core_attention,ATTN,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.11012,bandwidth,0.062682,1.3163
+ATTN.csa.grouped_out_proj,ATTN,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.083932,bandwidth,0.12422,2.6086
+ATTN.csa.grouped_out_proj,ATTN,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.21822,bandwidth,0.12422,2.6086
+ATTN.hca.kv_compress,ATTN,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.0052461,bandwidth,0.0077642,0.15528
+ATTN.hca.kv_compress,ATTN,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.01364,bandwidth,0.0077642,0.15528
+ATTN.hca.core_attention,ATTN,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.047025,bandwidth,0.069597,1.3919
+ATTN.hca.core_attention,ATTN,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.12226,bandwidth,0.069597,1.3919
+ATTN.hca.grouped_out_proj,ATTN,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.083932,bandwidth,0.12422,2.4844
+ATTN.hca.grouped_out_proj,ATTN,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.21822,bandwidth,0.12422,2.4844
+MOE.shared_expert_ffn,MOE,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.031465,bandwidth,0.046568,2.0024
+MOE.shared_expert_ffn,MOE,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.081809,bandwidth,0.046568,2.0024
+MOE.router_learned,MOE,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.0013162,bandwidth,0.0019479,0.077917
+MOE.router_learned,MOE,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.003422,bandwidth,0.0019479,0.077917
+MOE.router_learned_select,MOE,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,6.4e-07,bandwidth,9.472e-07,3.7888e-05
+MOE.router_learned_select,MOE,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,1.664e-06,bandwidth,9.472e-07,3.7888e-05
+MOE.routed_expert_ffn_learned,MOE,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.007872,bandwidth,0.011651,2.7961
+MOE.routed_expert_ffn_learned,MOE,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.020467,bandwidth,0.011651,2.7961
+MOE.router_hash,MOE,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,2.5e-09,bandwidth,3.7e-09,1.11e-08
+MOE.router_hash,MOE,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,6.5e-09,bandwidth,3.7e-09,1.11e-08
+MOE.routed_expert_ffn_hash,MOE,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.007872,bandwidth,0.011651,0.20971
+MOE.routed_expert_ffn_hash,MOE,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.020467,bandwidth,0.011651,0.20971
+MHC.sinkhorn_iterate,MHC,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,1.6e-07,bandwidth,2.368e-07,1.0182e-05
+MHC.sinkhorn_iterate,MHC,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,4.16e-07,bandwidth,2.368e-07,1.0182e-05
+OUT.embed_lookup,OUT,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,1.024e-05,bandwidth,1.5155e-05,1.5155e-05
+OUT.embed_lookup,OUT,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,2.6624e-05,bandwidth,1.5155e-05,1.5155e-05
+OUT.lm_head,OUT,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.65553,bandwidth,0.97018,0.97018
+OUT.lm_head,OUT,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,1.7044,bandwidth,0.97018,0.97018
+OUT.mtp_extra_head,OUT,long_agent_L1000000,uncontended: exclusive HBM channel / NoC link access,0.70,0.65553,bandwidth,0.97018,0.97018
+OUT.mtp_extra_head,OUT,long_agent_L1000000,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,1.7044,bandwidth,0.97018,0.97018

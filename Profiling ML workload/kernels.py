@@ -152,7 +152,7 @@ class Kernel:
         return sum(p * lat for p, lat, _, _ in self.latency_scenarios(ctx, hw))
 
 
-BYTES_PER_ELEM = {"bf16": 2.0, "fp8": 1.0, "int4": 0.5}
+BYTES_PER_ELEM = {"bf16": 2.0, "fp8": 1.0, "int4": 0.5, "fp32": 4.0}
 
 # ---------------------------------------------------------------------------
 # Generic report writers -- work for any list[Kernel], any workload

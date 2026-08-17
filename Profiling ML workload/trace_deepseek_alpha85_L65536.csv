@@ -1,0 +1,73 @@
+event_id,request_id,iteration,src_task,dst_task,payload_bytes,L_context,k_accepted,cum_output_tokens,src_task_compute_flops,note
+0,0,0,EXT,PREFILL,262144,65536,,0,0,external arrival: prompt token IDs
+1,0,0,PREFILL,COMMIT,203423744,65536,,0,2.48327e+15,"one-time prefill KV publish (compressed CSA/HCA, grows linearly with L)"
+2,0,0,PREFILL,MTP_DRAFT,8192,65536,,0,2.48327e+15,prefill->draft handoff: last-token hidden state
+3,0,1,MTP_DRAFT,VERIFY,64,65536,,0,6.16842e+09,proposed 7-token block via MTP head
+4,0,1,VERIFY,COMMIT,29920,65536,7,0,2.65242e+11,verify result: accepted-token KV + context carry
+5,0,1,COMMIT,MTP_DRAFT,64,65543,7,7,0,loop continue
+6,0,2,MTP_DRAFT,VERIFY,64,65543,,7,6.16855e+09,proposed 7-token block via MTP head
+7,0,2,VERIFY,COMMIT,29920,65543,7,7,2.65247e+11,verify result: accepted-token KV + context carry
+8,0,2,COMMIT,MTP_DRAFT,64,65550,7,14,0,loop continue
+9,0,3,MTP_DRAFT,VERIFY,64,65550,,14,6.16867e+09,proposed 7-token block via MTP head
+10,0,3,VERIFY,COMMIT,17504,65550,3,14,2.65252e+11,verify result: accepted-token KV + context carry
+11,0,3,COMMIT,MTP_DRAFT,64,65553,3,17,0,loop continue
+12,0,4,MTP_DRAFT,VERIFY,64,65553,,17,6.16872e+09,proposed 7-token block via MTP head
+13,0,4,VERIFY,COMMIT,14400,65553,2,17,2.65255e+11,verify result: accepted-token KV + context carry
+14,0,4,COMMIT,MTP_DRAFT,64,65555,2,19,0,loop continue
+15,0,5,MTP_DRAFT,VERIFY,64,65555,,19,6.16875e+09,proposed 7-token block via MTP head
+16,0,5,VERIFY,COMMIT,11296,65555,1,19,2.65256e+11,verify result: accepted-token KV + context carry
+17,0,5,COMMIT,MTP_DRAFT,64,65556,1,20,0,loop continue
+18,0,6,MTP_DRAFT,VERIFY,64,65556,,20,6.16877e+09,proposed 7-token block via MTP head
+19,0,6,VERIFY,COMMIT,29920,65556,7,20,2.65257e+11,verify result: accepted-token KV + context carry
+20,0,6,COMMIT,MTP_DRAFT,64,65563,7,27,0,loop continue
+21,0,7,MTP_DRAFT,VERIFY,64,65563,,27,6.16889e+09,proposed 7-token block via MTP head
+22,0,7,VERIFY,COMMIT,29920,65563,7,27,2.65262e+11,verify result: accepted-token KV + context carry
+23,0,7,COMMIT,MTP_DRAFT,64,65570,7,34,0,loop continue
+24,0,8,MTP_DRAFT,VERIFY,64,65570,,34,6.16901e+09,proposed 7-token block via MTP head
+25,0,8,VERIFY,COMMIT,29920,65570,7,34,2.65267e+11,verify result: accepted-token KV + context carry
+26,0,8,COMMIT,MTP_DRAFT,64,65577,7,41,0,loop continue
+27,0,9,MTP_DRAFT,VERIFY,64,65577,,41,6.16914e+09,proposed 7-token block via MTP head
+28,0,9,VERIFY,COMMIT,17504,65577,3,41,2.65272e+11,verify result: accepted-token KV + context carry
+29,0,9,COMMIT,MTP_DRAFT,64,65580,3,44,0,loop continue
+30,0,10,MTP_DRAFT,VERIFY,64,65580,,44,6.16919e+09,proposed 7-token block via MTP head
+31,0,10,VERIFY,COMMIT,14400,65580,2,44,2.65275e+11,verify result: accepted-token KV + context carry
+32,0,10,COMMIT,MTP_DRAFT,64,65582,2,46,0,loop continue
+33,0,11,MTP_DRAFT,VERIFY,64,65582,,46,6.16922e+09,proposed 7-token block via MTP head
+34,0,11,VERIFY,COMMIT,29920,65582,7,46,2.65276e+11,verify result: accepted-token KV + context carry
+35,0,11,COMMIT,MTP_DRAFT,64,65589,7,53,0,loop continue
+36,0,12,MTP_DRAFT,VERIFY,64,65589,,53,6.16934e+09,proposed 7-token block via MTP head
+37,0,12,VERIFY,COMMIT,14400,65589,2,53,2.65281e+11,verify result: accepted-token KV + context carry
+38,0,12,COMMIT,MTP_DRAFT,64,65591,2,55,0,loop continue
+39,0,13,MTP_DRAFT,VERIFY,64,65591,,55,6.16938e+09,proposed 7-token block via MTP head
+40,0,13,VERIFY,COMMIT,26816,65591,6,55,2.65283e+11,verify result: accepted-token KV + context carry
+41,0,13,COMMIT,MTP_DRAFT,64,65597,6,61,0,loop continue
+42,0,14,MTP_DRAFT,VERIFY,64,65597,,61,6.16948e+09,proposed 7-token block via MTP head
+43,0,14,VERIFY,COMMIT,23712,65597,5,61,2.65287e+11,verify result: accepted-token KV + context carry
+44,0,14,COMMIT,MTP_DRAFT,64,65602,5,66,0,loop continue
+45,0,15,MTP_DRAFT,VERIFY,64,65602,,66,6.16957e+09,proposed 7-token block via MTP head
+46,0,15,VERIFY,COMMIT,29920,65602,7,66,2.65291e+11,verify result: accepted-token KV + context carry
+47,0,15,COMMIT,MTP_DRAFT,64,65609,7,73,0,loop continue
+48,0,16,MTP_DRAFT,VERIFY,64,65609,,73,6.16969e+09,proposed 7-token block via MTP head
+49,0,16,VERIFY,COMMIT,26816,65609,6,73,2.65296e+11,verify result: accepted-token KV + context carry
+50,0,16,COMMIT,MTP_DRAFT,64,65615,6,79,0,loop continue
+51,0,17,MTP_DRAFT,VERIFY,64,65615,,79,6.16979e+09,proposed 7-token block via MTP head
+52,0,17,VERIFY,COMMIT,17504,65615,3,79,2.65301e+11,verify result: accepted-token KV + context carry
+53,0,17,COMMIT,MTP_DRAFT,64,65618,3,82,0,loop continue
+54,0,18,MTP_DRAFT,VERIFY,64,65618,,82,6.16985e+09,proposed 7-token block via MTP head
+55,0,18,VERIFY,COMMIT,11296,65618,1,82,2.65303e+11,verify result: accepted-token KV + context carry
+56,0,18,COMMIT,MTP_DRAFT,64,65619,1,83,0,loop continue
+57,0,19,MTP_DRAFT,VERIFY,64,65619,,83,6.16986e+09,proposed 7-token block via MTP head
+58,0,19,VERIFY,COMMIT,17504,65619,3,83,2.65304e+11,verify result: accepted-token KV + context carry
+59,0,19,COMMIT,MTP_DRAFT,64,65622,3,86,0,loop continue
+60,0,20,MTP_DRAFT,VERIFY,64,65622,,86,6.16992e+09,proposed 7-token block via MTP head
+61,0,20,VERIFY,COMMIT,8192,65622,0,86,2.65306e+11,verify result: accepted-token KV + context carry
+62,0,20,COMMIT,MTP_DRAFT,64,65622,0,86,0,loop continue
+63,0,21,MTP_DRAFT,VERIFY,64,65622,,86,6.16992e+09,proposed 7-token block via MTP head
+64,0,21,VERIFY,COMMIT,29920,65622,7,86,2.65306e+11,verify result: accepted-token KV + context carry
+65,0,21,COMMIT,MTP_DRAFT,64,65629,7,93,0,loop continue
+66,0,22,MTP_DRAFT,VERIFY,64,65629,,93,6.17004e+09,proposed 7-token block via MTP head
+67,0,22,VERIFY,COMMIT,20608,65629,4,93,2.65311e+11,verify result: accepted-token KV + context carry
+68,0,22,COMMIT,MTP_DRAFT,64,65633,4,97,0,loop continue
+69,0,23,MTP_DRAFT,VERIFY,64,65633,,97,6.17011e+09,proposed 7-token block via MTP head
+70,0,23,VERIFY,COMMIT,23712,65633,5,97,2.65314e+11,verify result: accepted-token KV + context carry
+71,0,23,COMMIT,EXIT,0,65638,5,102,0,terminal condition (EOS / max length)

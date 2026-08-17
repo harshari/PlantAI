@@ -1,0 +1,44 @@
+kernel_id,task,op_type,datatype,multiplicity,weight_shape_elems,layer_size_bytes_per_instance,compute_flops_per_instance,output_tokens,output_dim,output_activation_bytes_per_instance,output_note
+A.embed_lookup,A,lookup,bf16,1,9984000,19968000.0,0.0,1500,6656,19968000.0,embedding vector
+A.local_attn_layer.rmsnorm_attn,A,norm,bf16,39,6656,13312.0,49920000.0,1500,6656,19968000.0,normalized hidden state
+A.local_attn_layer.qkv_proj,A,matmul,bf16,39,30670848,61341696.0,92012544000.0,1500,4608,13824000.0,"Q+K+V, concatenated"
+A.local_attn_layer.attention,A,attention,bf16,39,,0.0,18432000000.0,1500,4096,12288000.0,"attention output, pre-out-proj"
+A.local_attn_layer.out_proj,A,matmul,bf16,39,27262976,54525952.0,81788928000.0,1500,6656,19968000.0,"attention output, post-projection"
+A.local_attn_layer.rmsnorm_ffn,A,norm,bf16,39,6656,13312.0,49920000.0,1500,6656,19968000.0,normalized hidden state
+A.local_attn_layer.ffn_gate_up,A,matmul,bf16,39,265814016,531628032.0,797442048000.0,1500,39936,119808000.0,"gate+up, pre-activation"
+A.local_attn_layer.swiglu_act,A,elementwise,bf16,39,,0.0,89856000.0,1500,19968,59904000.0,gated FFN hidden state
+A.local_attn_layer.ffn_down,A,matmul,bf16,39,132907008,265814016.0,398721024000.0,1500,6656,19968000.0,"FFN output, back to d_model"
+A.global_attn_layer.rmsnorm_attn,A,norm,bf16,13,6656,13312.0,49920000.0,1500,6656,19968000.0,normalized hidden state
+A.global_attn_layer.qkv_proj,A,matmul,bf16,13,30670848,61341696.0,92012544000.0,1500,4608,13824000.0,"Q+K+V, concatenated"
+A.global_attn_layer.attention,A,attention,bf16,13,,0.0,18432000000.0,1500,4096,12288000.0,"attention output, pre-out-proj"
+A.global_attn_layer.out_proj,A,matmul,bf16,13,27262976,54525952.0,81788928000.0,1500,6656,19968000.0,"attention output, post-projection"
+A.global_attn_layer.rmsnorm_ffn,A,norm,bf16,13,6656,13312.0,49920000.0,1500,6656,19968000.0,normalized hidden state
+A.global_attn_layer.ffn_gate_up,A,matmul,bf16,13,265814016,531628032.0,797442048000.0,1500,39936,119808000.0,"gate+up, pre-activation"
+A.global_attn_layer.swiglu_act,A,elementwise,bf16,13,,0.0,89856000.0,1500,19968,59904000.0,gated FFN hidden state
+A.global_attn_layer.ffn_down,A,matmul,bf16,13,132907008,265814016.0,398721024000.0,1500,6656,19968000.0,"FFN output, back to d_model"
+A.final_norm,A,norm,bf16,1,6656,13312.0,49920000.0,1500,6656,19968000.0,normalized hidden state
+B.draft_layer.qkv_proj,B,matmul,bf16,80,40894464,81788928.0,81788928.0,1,6144,12288.0,"Q+K+V, concatenated"
+B.draft_layer.attention,B,attention,bf16,80,,0.0,24576000.0,1,4096,8192.0,"attention output, pre-out-proj"
+B.draft_layer.out_proj,B,matmul,bf16,80,27262976,54525952.0,54525952.0,1,6656,13312.0,"attention output, post-projection"
+B.draft_layer.ffn,B,matmul,bf16,80,,0.0,,1,,,UNRESOLVED -- d_ffn_draft not published
+B.embed_lookup,B,lookup,bf16,16,6656,13312.0,0.0,1,6656,13312.0,embedding vector
+B.lm_head,B,matmul,bf16,16,853671936,1707343872.0,1707343872.0,1,128256,256512.0,logits
+C.local_attn_layer.rmsnorm_attn,C,norm,bf16,39,6656,13312.0,532480.0,16,6656,212992.0,normalized hidden state
+C.local_attn_layer.qkv_proj,C,matmul,bf16,39,30670848,61341696.0,981467136.0,16,4608,147456.0,"Q+K+V, concatenated"
+C.local_attn_layer.attention,C,attention,bf16,39,,0.0,393216000.0,16,4096,131072.0,"attention output, pre-out-proj"
+C.local_attn_layer.out_proj,C,matmul,bf16,39,27262976,54525952.0,872415232.0,16,6656,212992.0,"attention output, post-projection"
+C.local_attn_layer.rmsnorm_ffn,C,norm,bf16,39,6656,13312.0,532480.0,16,6656,212992.0,normalized hidden state
+C.local_attn_layer.ffn_gate_up,C,matmul,bf16,39,265814016,531628032.0,8506048512.0,16,39936,1277952.0,"gate+up, pre-activation"
+C.local_attn_layer.swiglu_act,C,elementwise,bf16,39,,0.0,958464.0,16,19968,638976.0,gated FFN hidden state
+C.local_attn_layer.ffn_down,C,matmul,bf16,39,132907008,265814016.0,4253024256.0,16,6656,212992.0,"FFN output, back to d_model"
+C.global_attn_layer.rmsnorm_attn,C,norm,bf16,13,6656,13312.0,532480.0,16,6656,212992.0,normalized hidden state
+C.global_attn_layer.qkv_proj,C,matmul,bf16,13,30670848,61341696.0,981467136.0,16,4608,147456.0,"Q+K+V, concatenated"
+C.global_attn_layer.attention,C,attention,bf16,13,,0.0,393216000.0,16,4096,131072.0,"attention output, pre-out-proj"
+C.global_attn_layer.out_proj,C,matmul,bf16,13,27262976,54525952.0,872415232.0,16,6656,212992.0,"attention output, post-projection"
+C.global_attn_layer.rmsnorm_ffn,C,norm,bf16,13,6656,13312.0,532480.0,16,6656,212992.0,normalized hidden state
+C.global_attn_layer.ffn_gate_up,C,matmul,bf16,13,265814016,531628032.0,8506048512.0,16,39936,1277952.0,"gate+up, pre-activation"
+C.global_attn_layer.swiglu_act,C,elementwise,bf16,13,,0.0,958464.0,16,19968,638976.0,gated FFN hidden state
+C.global_attn_layer.ffn_down,C,matmul,bf16,13,132907008,265814016.0,4253024256.0,16,6656,212992.0,"FFN output, back to d_model"
+C.embed_lookup,C,lookup,bf16,1,106496,212992.0,0.0,16,6656,212992.0,embedding vector
+C.lm_head,C,matmul,bf16,1,853671936,1707343872.0,27317501952.0,16,128256,4104192.0,logits
+D.reject_sample_compare,D,reduce_argmax,fp32,1,,0.0,2052096.0,16,1,64.0,"accept/reject decision per position (int, not a full tensor)"

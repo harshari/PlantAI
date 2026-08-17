@@ -1,0 +1,55 @@
+event_id,request_id,iteration,src_task,dst_task,payload_bytes,L_context,k_accepted,cum_output_tokens,note
+0,0,0,EXT,A,6000,1500,,0,external arrival: prompt token IDs
+1,0,0,A,D,79872000,1500,,0,one-time prefill KV publish (grows linearly with L)
+2,0,0,A,B,13312,1500,,0,prefill->draft handoff: last-token hidden state
+3,0,1,B,C,128,1500,,0,proposed 16-token block: IDs + probs
+4,0,1,C,D,865280,1500,16,0,verify result: accepted-token KV + context carry
+5,0,1,D,B,64,1516,16,16,loop continue
+6,0,2,B,C,128,1516,,16,proposed 16-token block: IDs + probs
+7,0,2,C,D,66560,1516,1,16,verify result: accepted-token KV + context carry
+8,0,2,D,B,64,1517,1,17,loop continue
+9,0,3,B,C,128,1517,,17,proposed 16-token block: IDs + probs
+10,0,3,C,D,119808,1517,2,17,verify result: accepted-token KV + context carry
+11,0,3,D,B,64,1519,2,19,loop continue
+12,0,4,B,C,128,1519,,19,proposed 16-token block: IDs + probs
+13,0,4,C,D,66560,1519,1,19,verify result: accepted-token KV + context carry
+14,0,4,D,B,64,1520,1,20,loop continue
+15,0,5,B,C,128,1520,,20,proposed 16-token block: IDs + probs
+16,0,5,C,D,865280,1520,16,20,verify result: accepted-token KV + context carry
+17,0,5,D,B,64,1536,16,36,loop continue
+18,0,6,B,C,128,1536,,36,proposed 16-token block: IDs + probs
+19,0,6,C,D,439296,1536,8,36,verify result: accepted-token KV + context carry
+20,0,6,D,B,64,1544,8,44,loop continue
+21,0,7,B,C,128,1544,,44,proposed 16-token block: IDs + probs
+22,0,7,C,D,119808,1544,2,44,verify result: accepted-token KV + context carry
+23,0,7,D,B,64,1546,2,46,loop continue
+24,0,8,B,C,128,1546,,46,proposed 16-token block: IDs + probs
+25,0,8,C,D,492544,1546,9,46,verify result: accepted-token KV + context carry
+26,0,8,D,B,64,1555,9,55,loop continue
+27,0,9,B,C,128,1555,,55,proposed 16-token block: IDs + probs
+28,0,9,C,D,332800,1555,6,55,verify result: accepted-token KV + context carry
+29,0,9,D,B,64,1561,6,61,loop continue
+30,0,10,B,C,128,1561,,61,proposed 16-token block: IDs + probs
+31,0,10,C,D,279552,1561,5,61,verify result: accepted-token KV + context carry
+32,0,10,D,B,64,1566,5,66,loop continue
+33,0,11,B,C,128,1566,,66,proposed 16-token block: IDs + probs
+34,0,11,C,D,705536,1566,13,66,verify result: accepted-token KV + context carry
+35,0,11,D,B,64,1579,13,79,loop continue
+36,0,12,B,C,128,1579,,79,proposed 16-token block: IDs + probs
+37,0,12,C,D,173056,1579,3,79,verify result: accepted-token KV + context carry
+38,0,12,D,B,64,1582,3,82,loop continue
+39,0,13,B,C,128,1582,,82,proposed 16-token block: IDs + probs
+40,0,13,C,D,66560,1582,1,82,verify result: accepted-token KV + context carry
+41,0,13,D,B,64,1583,1,83,loop continue
+42,0,14,B,C,128,1583,,83,proposed 16-token block: IDs + probs
+43,0,14,C,D,173056,1583,3,83,verify result: accepted-token KV + context carry
+44,0,14,D,B,64,1586,3,86,loop continue
+45,0,15,B,C,128,1586,,86,proposed 16-token block: IDs + probs
+46,0,15,C,D,13312,1586,0,86,verify result: accepted-token KV + context carry
+47,0,15,D,B,64,1586,0,86,loop continue
+48,0,16,B,C,128,1586,,86,proposed 16-token block: IDs + probs
+49,0,16,C,D,599040,1586,11,86,verify result: accepted-token KV + context carry
+50,0,16,D,B,64,1597,11,97,loop continue
+51,0,17,B,C,128,1597,,97,proposed 16-token block: IDs + probs
+52,0,17,C,D,279552,1597,5,97,verify result: accepted-token KV + context carry
+53,0,17,D,EXIT,0,1602,5,102,terminal condition (EOS / max length)

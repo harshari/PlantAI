@@ -1,0 +1,433 @@
+PROFILING ML WORKLOAD — PROBABILISTIC DAG FOR SPECULATIVE DECODING
+===================================================================
+
+What this folder is
+-------------------
+A self-contained encoding of the workload-characterization half of the
+"Probabilistic Workload DAG -> Hardware Mapping" pipeline:
+
+  [Workload DAG] -> [Task placement] -> [Trace generation] -> [NoC sim
+      (fixed)         (BookSim / ns-3)] -> [Timing / contention metrics]
+                       ^________________ results feed back _____________|
+
+The DAG is generated ONCE from profiling and stays fixed across all
+floorplan/placement experiments; only the placement->trace->simulate half
+varies per hardware candidate. The trace produced here is deliberately
+LOGICAL (task-ID based): the placement layer remaps logical task IDs to
+physical chiplet IDs per floorplan candidate, so the floorplan search's
+inner loop never regenerates the trace.
+
+Reference model for all worked numbers: Muse Glimmer-30B (dense causal
+transformer, d_model=6656, 52 layers = 39 sliding-window "local" layers
+(window 2048) + 13 full-context "global" layers, GQA 32Q/2KV main model,
+32Q/8KV draft model, 5 draft layers, speculative block size 16, ~27.8B LM
+params). Swap the constants block in workload_dag.py for your target model.
+
+This folder now has two levels of detail, and they answer two different
+questions. Read them in this order:
+
+  LEVEL 1 -- TASK graph (workload_dag.py). "Which task fires next, and with
+  what payload." Four opaque nodes (A/B/C/D), structural edge probabilities,
+  the stochastic-unrolling / traffic-equation machinery. This is what you
+  need to reason about the LOOP: how many iterations, how much total KV
+  traffic, how the request-level timing distribution looks.
+
+  LEVEL 2 -- KERNEL graph (kernels.py + specdecode_kernels.py +
+  vision_kernels.py). "What actually runs inside each task, on what compute
+  unit, moving how many bytes, at what precision -- and how long does that
+  really take once you account for HBM/NoC contention." This is what you
+  need to MAP the workload onto silicon: which kernel gets its own compute
+  tile, which needs more cache, which is bandwidth-starved.
+
+Files -- Level 1 (task graph)
+------------------------------
+  workload_dag.py   DAG encoding + payload formulas + stochastic unrolling
+                    + traffic-equation solver + trace/figure generators
+  dag_figure.png    expected DAG (also dag_figure.svg) — regenerate with
+                    `python3 workload_dag.py`
+  trace_table.csv   one sampled logical trace (seed=7, alpha=0.75,
+                    prompt L0=1500, 100 output tokens, BF16)
+  distributions.png the three probability distributions driving the
+                    stochastic unrolling (also .svg): acceptance PMF P(k)
+                    at alpha = 0.65/0.75/0.85, the Section-6 prompt-length
+                    distribution, and the resulting iteration-count
+                    distribution over 2000 sampled unrollings
+  acceptance_pmf.csv  P(k=j) per alpha bound as data, plus E[k] row
+
+Files -- Level 2 (kernel graph)
+--------------------------------
+  kernels.py                 shared framework: Kernel/HardwareProfile
+                              dataclasses, roofline + contention-scenario
+                              latency engine, generic CSV report writers.
+                              Workload-agnostic -- this is the reusable part.
+  specdecode_kernels.py       43 kernels across A/B/C/D for the SAME
+                              spec-decode workload as Level 1, now broken
+                              into matmul/attention/norm/elementwise/lookup
+                              ops with real FLOPs and byte formulas.
+                              `python3 specdecode_kernels.py` regenerates:
+    kernel_table.csv            op type, FLOPs, bytes, precision, arithmetic
+                                intensity -- per kernel, at L=1,500
+    latency_scenarios.csv       the probability-weighted latency table
+                                (uncontended vs. contended) per kernel per
+                                context regime -- the "30%/70%" table
+    bottleneck_summary.csv      per task per context regime: which single
+                                kernel dominates latency, and is it
+                                compute- or bandwidth-bound
+    kernel_dag_figure.png/.svg  the four task pipelines, kernel by kernel
+  vision_kernels.py            second workload (perception encoder), proof
+                              that the same schema covers a structurally
+                              different DAG (no loop, no branch, bidirectional
+                              attention). `python3 vision_kernels.py`
+                              regenerates vision_kernel_table.csv,
+                              vision_latency_scenarios.csv, and
+                              vision_dag_figure.png/.svg.
+
+The DAG (see dag_figure.png)
+----------------------------
+  A (prefill)  ->  [ B (draft) -> C (verify) -> D (KV-commit) ]*  ->  exit
+
+  A  Prefill: 52-layer forward over the prompt (length L). Runs once.
+  B  Draft: 5-layer forward proposing a 16-token block. Flat cost
+     (sliding window only, no growth with context depth).
+  C  Verify: 52-layer forward checking the proposed block against the
+     full context in parallel.
+  D  KV-cache commit: accept k of the 16 proposed tokens.
+
+IMPORTANT — this is NOT a branching graph. Every edge fires with p=1.0 on
+every iteration: C->D always fires (at minimum one bonus token is appended
+even if the whole block is rejected), and D->B always fires until an
+EXTERNAL terminal condition (EOS / max length) ends the loop. The
+stochastic quantity is k, the number of tokens accepted per iteration —
+not which edge fires. The DAG is therefore a template graph plus a
+stochastic unrolling rule: each simulated request samples its own sequence
+of k values, giving a DISTRIBUTION of iteration counts and payload sizes.
+Run an ensemble of sampled unrollings through the NoC simulator to get a
+timing distribution, not a single number.
+
+Acceptance model (assumed — profiling pending)
+----------------------------------------------
+Per-token acceptance probability alpha; rejection sampling gives a
+truncated geometric:  P(k=j) = alpha^j (1-alpha) for j=0..15,
+P(k=16) = alpha^16.  Assumed bounds until profiled:
+
+  alpha   E[k]/block   P(full block)   loop iters / 100 output tokens
+  0.65      1.86          0.10%            ~54
+  0.75      2.97          1.0%             ~34   (nominal)
+  0.85      5.25          7.4%             ~19
+
+Replace with the measured alpha or, better, the full empirical
+k-histogram (real acceptance is not perfectly geometric).
+
+Payload formulas (BF16; halve for FP8, quarter for INT4)
+--------------------------------------------------------
+  KV bytes/token (main)  = 2 * 2 KV-heads * 128 * 52 layers * 2 B = 53,248 B
+  KV bytes/token (draft) = 2 * 8 KV-heads * 128 *  5 layers * 2 B = 20,480 B
+  EXT->A  prompt token IDs, ~4 B/token
+  A->B    last-token hidden state, d_model * 2 B = 13,312 B
+  A->D    one-time prefill KV publish: (39*min(L,2048) + 13*L) * 1,024 B
+          — 79.9 MB at L=1500; 706.5 MB at L=100k. Grows linearly with L,
+          so it gets its own edge instead of a generic "hidden state" edge.
+  B->C    proposed block: token IDs + probabilities, ~128 B
+  C->D    k * 53,248 B + 13,312 B context carry (expected: E[k]*53248+13312)
+  D->B    loop-continue control, ~64 B (assumption)
+
+Invariant worth checking in any generated trace: total C->D KV bytes over
+a full generation is independent of alpha — every accepted token writes
+its KV exactly once, so total = output_length * KV_bytes/token (plus the
+per-iteration 13,312 B carry, which does scale with iteration count).
+alpha changes burst SHAPE (many small vs. fewer large bursts), which
+matters for NoC contention even though total bytes are constant.
+
+Compute formulas
+----------------
+  A: 5.0e10*L + 346112*L^2   (quadratic term = 13 global-attention layers;
+                              40.9% of prefill FLOPs by L=100k)
+  B: 16 * (TBD)              (draft FFN intermediate width unpublished —
+                              inspect GGUF tensor shapes to resolve)
+  C: 16*5.0e10 + 5537792*L   (verify cost grows with context position L,
+                              NOT constant per iteration)
+  D: ~0                      (bookkeeping)
+
+Trace table format (trace_table.csv)
+------------------------------------
+One row per edge firing. Columns:
+  event_id           global ordering (logical time; the placement/timing
+                     layer assigns real injection cycles)
+  request_id         for multi-request ensembles
+  iteration          0 = prefill phase, 1..N = decode loop iterations
+  src_task/dst_task  LOGICAL task IDs (A/B/C/D, EXT, EXIT) — remapped to
+                     physical chiplet IDs by the placement layer
+  payload_bytes      from the formulas above, k sampled per iteration
+  L_context          context position when the edge fires (drives C's
+                     compute and A's writeout)
+  k_accepted         sampled k for C->D / D->B rows, blank elsewhere
+  cum_output_tokens  progress toward the terminal condition
+  note               human-readable edge description
+
+The shipped trace (seed 7): 87 events, 28 iterations, mean k=3.86,
+final L=1608, prefill KV publish 79,872,000 B, total C->D 6,123,520 B.
+A 1000-request ensemble at alpha=0.75 (prompt lengths drawn from the
+Section-6 agent-heavy distribution) gives: iterations mean 34.6, p50 34,
+p95 46, max 61 — matching the ~34-iterations/100-tokens prediction.
+
+Reproducing / sweeping
+----------------------
+  python3 workload_dag.py                             defaults (above)
+  python3 workload_dag.py --alpha 0.85 --prompt 16384 --out-tokens 256
+  python3 workload_dag.py --precision int4            KV bytes / 4
+  python3 workload_dag.py --ensemble 1000             distribution summary
+The script self-tests the traffic-equation solver on the Section-2.1 toy
+example (V_C = 1/(1-0.2) = 1.25 under a 20% retry loop) at every run.
+
+Caveats carried over from the working notes
+-------------------------------------------
+- alpha values are assumed bounds, not profiled; replace with measured
+  k-histograms when available.
+- Weight precision != KV/activation precision: 4-bit weight quant does not
+  imply INT4 KV. Confirm engine config before choosing --precision.
+- Inter-node traffic (this trace) answers "is the NoC a bottleneck?" (no —
+  bursts stay under ~300 KB even at L=100k). It does NOT capture
+  weight-streaming bandwidth, which dominates at batch=1 and is the real
+  memory-bound axis; model that separately per Section 7 of the notes.
+- Exponential-service queueing math is a poor fit for near-deterministic
+  kernel latencies; prefer discrete-event simulation with profiled
+  service-time distributions for the timing layer.
+- The prompt-length distribution's long-context buckets rest on a
+  synthetic agent-heavy model (arxiv.org/html/2603.16054), not a measured
+  trace; Azure Splitwise traces (Patel et al., ISCA 2024) anchor the short
+  buckets. Override with real deployment logs when available.
+
+
+LEVEL 2 -- KERNEL-LEVEL BREAKDOWN (kernels.py / specdecode_kernels.py)
+========================================================================
+
+What a "kernel" is here
+------------------------
+Every task node from Level 1 is a short pipeline of named ops, each with:
+  - an op TYPE: matmul, attention (fused QK^T + softmax + AV), norm
+    (RMSNorm/LayerNorm), elementwise (SwiGLU/GELU activation), lookup
+    (embedding gather), or reduce_argmax (rejection-sampling compare);
+  - a FLOPs formula, derived from the model's actual head/FFN dimensions,
+    not a generic per-token constant;
+  - a bytes formula, split into WEIGHT bytes (read from local HBM once per
+    forward pass, ~constant regardless of token count at batch=1) and LOCAL
+    IO bytes (activations/KV touched on-chip -- distinct from the Level-1
+    edges, which are the bytes that cross the interconnect between tasks);
+  - a precision.
+That's the direct answer to "what's the first kernel, how much compute, how
+much data, what precision, is it a matmul or a lookup": run
+`python3 specdecode_kernels.py` and read kernel_table.csv. First kernel in
+task A is A.embed_lookup (op_type=lookup, ~0 FLOPs, a gather); the next nine
+are the first attention-layer's pipeline (norm -> qkv_proj[matmul] ->
+attention -> out_proj[matmul] -> norm -> ffn_gate_up[matmul] ->
+swiglu[elementwise] -> ffn_down[matmul]), repeated 39 times for local layers
+and 13 times for global layers, all at BF16.
+
+One correction this pass makes to Level 1: task B's per-block cost was
+modeled in Section 4 as a single flat number times 16. Decomposing it
+confirms why that 16x was there -- the draft model is autoregressive WITHIN
+itself and cannot propose all 16 tokens in one parallel pass (it doesn't
+know token 2 until it has generated token 1). So B is actually 16
+SEQUENTIAL micro-steps of the 5-layer draft model, each producing one
+token, not one parallel pass over 16 positions like C's verify step. That
+distinction matters for placement: B's micro-steps are on the critical path
+serially, so pipelining across B's 5 draft layers has limited value (there's
+nothing else for the pipeline to overlap with within a single micro-step at
+batch=1), whereas C's 52 layers over 16 positions in parallel are a much
+better pipelining target.
+
+The FLOPs formulas are cross-validated against Level 1's Section-4 aggregate
+formulas (see specdecode_kernels.py's reconcile(), run automatically at
+import time for L=16,384): task A tracks within 9% at L=16,384 and within 5%
+at L=1,500 (both derivations agree closely once the linear, non-attention
+term dominates); task C tracks within 3-15% across the same range. The
+match isn't perfect because Section 4's constants were supplied as fixed
+inputs without a shown derivation -- reconcile() prints the gap at any L you
+give it, and the kernel-level numbers are the ones to trust going forward
+since every constant in them traces back to a named architectural dimension
+(d_model, head_dim, n_q_heads, d_ffn) rather than an opaque coefficient.
+
+The latency-distribution mechanism (the "30%/70%" table you asked for)
+-------------------------------------------------------------------------
+FLOPs and bytes are deterministic given a kernel and a context (L, block
+size). What's genuinely stochastic is how long that kernel actually takes
+on real, shared hardware -- because HBM channels and NoC links are shared
+with sibling chiplets, so the SAME kernel invocation runs faster when its
+memory channel is idle and slower when a neighbor is mid-burst on it. We
+don't have profiled contention data yet (same open item as everything else
+in this project needing real silicon numbers), so kernels.py computes:
+
+  1. a roofline pair per kernel: compute_ms = FLOPs / peak_FLOPs_per_sec,
+     bw_ms = (weight_bytes + io_bytes) / HBM_bandwidth, against an
+     ILLUSTRATIVE placeholder hardware profile (200 TFLOP/s, 1.6 TB/s HBM --
+     see kernels.py's GENERIC_CHIPLET, replace with your actual datasheet);
+  2. an ASSUMED two-scenario contention distribution applied to the
+     bandwidth term only (compute/ALU contention across chiplets is a much
+     smaller effect in practice than shared-memory-channel contention):
+        70% uncontended  -> bw_ms x 1.0
+        30% contended     -> bw_ms x 2.6  (sibling chiplet sharing the channel)
+     latency = max(compute_ms, bw_ms_scenario) in each branch, so a
+     compute-bound kernel is insensitive to the split and a bandwidth-bound
+     one genuinely has two different latencies with two different
+     probabilities -- exactly "30% of the time this step takes 10ms, 70% of
+     the time it takes 30ms," just with the roles of the two probabilities
+     swapped in the placeholder numbers above (fix the split once you have
+     real data).
+
+This contention split is a PRIOR, not a measurement, and it's meant to be
+temporary: it's exactly what the pipeline diagram's feedback arrow is for
+(NoC sim results feed back into placement/timing choices). Once a placement
+candidate is fixed and run through BookSim/ns-3, replace
+kernels.CONTENTION_SCENARIOS with that simulator's observed
+contended-vs-uncontended split for the kernels sharing that specific memory
+channel/link, and every downstream latency number in latency_scenarios.csv
+and bottleneck_summary.csv updates automatically -- no other file changes.
+
+What the bottleneck data actually says (bottleneck_summary.csv)
+-------------------------------------------------------------------------
+This is the "do we give more priority to compute or communication, and
+does it depend on token length / what we're asking for" question, answered
+per task per context regime (expected latency = probability-weighted mean
+across the contention scenarios, summed over every kernel instance in the
+task):
+
+  short_chat (L=1,500):
+    A (prefill)  424 ms  -- COMPUTE-bound (ffn_gate_up, 37% of task time)
+    B (draft)     35 ms  -- BANDWIDTH-bound (lm_head, 71% of task time --
+                             streaming the full vocab-projection weight
+                             matrix from HBM for a single new token is the
+                             classic batch=1 memory-bound case)
+    C (verify)    46 ms  -- BANDWIDTH-bound (ffn_gate_up, 42%)
+    D (commit)  0.015 ms -- negligible either way
+
+  long_agent (L=32,768 -> L=100,000):
+    A (prefill)  15,900 ms -> 89,900 ms -- BANDWIDTH-bound, and the
+                             DOMINANT kernel SHIFTS: at short context the
+                             FFN matmul dominates (compute-bound); by
+                             L=100,000 it's global_attn_layer.attention (69%
+                             of task time), because reading back the growing
+                             KV cache for full-context attention becomes the
+                             larger memory transfer than any single weight
+                             matrix. This is the concrete version of Section
+                             5's "map global-layer compute to a separate,
+                             higher-FLOPs chiplet class" recommendation --
+                             refined by kernel data to "give that chiplet
+                             class more HBM bandwidth, not more FLOPs,
+                             specifically for its attention kernel."
+    B, C          unchanged from short_chat -- both are dominated by
+                             per-forward-pass weight streaming (lm_head,
+                             ffn_gate_up), which doesn't scale with L at
+                             all. This is the answer to "does it depend on
+                             token length": for the decode-side tasks (B,
+                             C), no; for the prefill task (A), yes, and the
+                             BOTTLENECK KIND changes too, not just the
+                             magnitude.
+
+So the single-sentence finding for the hardware-mapping question: at short
+context, invest in FLOPs for A and bandwidth for B/C; at long context, A's
+bottleneck kernel flips from FFN-compute to attention-bandwidth, so the
+same chiplet that looked compute-starved at L=1,500 looks bandwidth-starved
+at L=100,000 -- if A's chiplet class has a fixed compute/bandwidth ratio,
+there is no single ratio that's right across the whole context-length
+sweep, which is itself a design-space-exploration result worth stating
+explicitly rather than picking one regime and calling it representative.
+
+A placement insight the kernel view surfaces that the task view couldn't:
+A and C run IDENTICAL kernels -- same 52-layer main-model weights, same
+op sequence -- differing only in token count (L for A, 16 for C) and
+whether attention reads freshly-computed or cached KV. That makes A and C
+strong candidates to timeshare one chiplet class rather than being
+provisioned as two separate pools, provided the placement layer's
+scheduler can interleave prefill and verify passes across requests. B, by
+contrast, uses entirely different (smaller) weights and cannot share that
+pool.
+
+A second workload, to prove the schema generalizes (vision_kernels.py)
+-------------------------------------------------------------------------
+Everything above is built on kernels.py's Kernel/HardwareProfile dataclasses
+and generic report writers, which know nothing about speculative decoding
+specifically. vision_kernels.py plugs in Glimmer-30B's perception encoder
+(mentioned in the model card as "dense causal transformer + perception
+encoder," specs not published -- every dimension in this file is an
+ASSUMED CLIP-ViT-H/14-style placeholder, flagged in its module docstring)
+on the exact same schema, and the resulting DAG shape is deliberately
+different in every way that matters for placement:
+
+                    spec-decode (Level 1)         perception encoder
+  structure          A -> [B->C->D]* -> exit       EXT -> patch_embed ->
+                      (loop, exits on EOS)          [vit_block]x32 ->
+                                                     final_norm -> proj_head
+                                                     -> exit (single pass)
+  branching           trivial (p=1 everywhere;      none -- no branch at all
+                      stochastic PAYLOAD, not edge)
+  attention           causal, windowed for 39/52    full bidirectional,
+                      layers                        unwindowed, EVERY layer
+  growth axis         context position L (KV        image resolution (num
+                      cache grows every iteration)  patches fixed per image,
+                                                     no cache growth)
+
+Doubling image resolution (448 -> 896px, 1,025 -> 4,097 tokens) takes total
+FLOPs from 1.48e12 to 7.98e12 -- a 5.4x increase for a 4x token increase,
+because the unwindowed full-attention kernel is quadratic in token count
+with NO windowing to cap it, unlike the text model's 39 local layers. A
+vision encoder hits the quadratic-attention wall at a much smaller absolute
+token count than the text decoder does, precisely because it has no local/
+global split. That's a real, workload-specific placement conclusion that
+only exists because the schema was reused rather than hand-built twice --
+which is the actual point of building it this way.
+
+Generalizing to more workloads (DeepSeek, Kimi K2, other MSL models, MoE)
+-------------------------------------------------------------------------
+Any workload that can be described as "a sequence of named kernels, each
+with a FLOPs formula and a bytes formula" plugs into kernels.py unchanged --
+define the Kernel list, hand it to write_kernel_table / write_latency_table
+/ a figure function styled on draw_kernel_figure or draw_vision_figure, and
+the whole reporting pipeline (op-type coloring, roofline, contention
+scenarios, bottleneck rollup) comes for free. Two families are worth calling
+out specifically since they exercise the parts of the schema neither
+workload above does:
+
+  - MoE models (DeepSeek-V3, Kimi K2, and presumably other MSL apps): these
+    have a REAL probabilistic branch that the spec-decode loop in this
+    folder does NOT -- "which of N experts does this token route to" is
+    exactly p(j->i) traffic-equation territory from Section 2.1's toy
+    example (V_i = sum_j V_j * p(j->i)), which the spec-decode workload
+    ended up not needing (every one of its edges turned out to fire at
+    p=1.0, with payload size k as the only random variable). An MoE
+    workload would add a "router" lookup kernel (op_type=lookup, tiny
+    FLOPs, picks top-k experts) whose OUTPUT feeds directly into
+    workload_dag.py's solve_traffic() as real routing probabilities, then
+    each expert is its own small Kernel chain (its own FFN weights,
+    multiplicity = expected visits from the traffic-equation solve rather
+    than a fixed per-layer count). This is the natural next workload to
+    build if the goal is to exercise the branching machinery this project
+    already has, rather than the payload-stochasticity machinery it's
+    exercised so far.
+  - Diffusion / image-generation workloads: structurally closer to the
+    perception encoder (fixed-size, no autoregressive loop) but with a
+    FIXED, KNOWN iteration count (denoising steps) instead of a stochastic
+    one -- multiplicity becomes a hyperparameter, not a sampled or
+    traffic-equation-derived quantity. Simpler than either workload here in
+    that specific respect.
+
+Open items specific to Level 2 (in addition to the ones already listed above)
+-------------------------------------------------------------------------------
+  - CONTENTION_SCENARIOS (kernels.py) is an assumed 70/30 split with a 2.6x
+    bandwidth penalty -- entirely a placeholder. Replace with the observed
+    contention distribution from a BookSim/ns-3 run once a placement is
+    fixed, per-kernel-group if contention differs by which chiplets share a
+    memory channel.
+  - GENERIC_CHIPLET (kernels.py) is an illustrative 200 TFLOP/s / 1.6 TB/s
+    profile, not a real datasheet -- same "Open items" caveat as Section 9
+    of the Level-1 notes, now parametrized in one place that every kernel's
+    latency depends on.
+  - VOCAB_SIZE=128,256 (specdecode_kernels.py) is assumed (Llama-3-style),
+    not published for Glimmer-30B -- affects B.lm_head and C.lm_head, which
+    are currently the single largest bandwidth-bound kernels in the whole
+    breakdown, so this is a high-leverage number to confirm.
+  - Draft FFN width and draft d_model (specdecode_kernels.py) remain
+    unresolved, same as Level 1 -- B.draft_layer.ffn's FLOPs are reported
+    as UNRESOLVED in kernel_table.csv rather than guessed.
+  - Every dimension in vision_kernels.py is an assumed placeholder; the
+    whole file should be re-parametrized once real perception-encoder specs
+    are available, not trusted as a sourced result.

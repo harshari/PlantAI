@@ -1,0 +1,13 @@
+context_regime,task,task_expected_latency_ms,dominant_kernel,dominant_kernel_share,dominant_bound_type
+short_chat_L1500,A,424.2,A.local_attn_layer.ffn_gate_up,36.7%,compute
+short_chat_L1500,B,35.42,B.lm_head,71.4%,bandwidth
+short_chat_L1500,C,45.9,C.local_attn_layer.ffn_gate_up,41.9%,bandwidth
+short_chat_L1500,D,0.01519,D.reject_sample_compare,100.0%,bandwidth
+long_agent_L32768,A,1.591e+04,A.global_attn_layer.attention,41.6%,bandwidth
+long_agent_L32768,B,35.44,B.lm_head,71.3%,bandwidth
+long_agent_L32768,C,46.46,C.local_attn_layer.ffn_gate_up,41.4%,bandwidth
+long_agent_L32768,D,0.01519,D.reject_sample_compare,100.0%,bandwidth
+long_agent_L100000,A,8.993e+04,A.global_attn_layer.attention,68.5%,bandwidth
+long_agent_L100000,B,35.44,B.lm_head,71.3%,bandwidth
+long_agent_L100000,C,47.6,C.local_attn_layer.ffn_gate_up,40.4%,bandwidth
+long_agent_L100000,D,0.01519,D.reject_sample_compare,100.0%,bandwidth

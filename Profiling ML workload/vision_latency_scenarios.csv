@@ -1,0 +1,45 @@
+kernel_id,task,context_regime,scenario,probability,latency_ms_per_instance,bound_type,expected_latency_ms_per_instance,expected_total_latency_ms_all_instances
+V.patch_embed,V,res_448,uncontended: exclusive HBM channel / NoC link access,0.70,0.007707,compute,0.007707,0.007707
+V.patch_embed,V,res_448,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.007707,compute,0.007707,0.007707
+V.vit_block.norm_attn,V,res_448,uncontended: exclusive HBM channel / NoC link access,0.70,0.0032816,bandwidth,0.0048568,0.15542
+V.vit_block.norm_attn,V,res_448,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.0085322,bandwidth,0.0048568,0.15542
+V.vit_block.qkv_proj,V,res_448,uncontended: exclusive HBM channel / NoC link access,0.70,0.050381,compute,0.050381,1.6122
+V.vit_block.qkv_proj,V,res_448,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.050381,compute,0.050381,1.6122
+V.vit_block.attention,V,res_448,uncontended: exclusive HBM channel / NoC link access,0.70,0.026896,compute,0.026896,0.86067
+V.vit_block.attention,V,res_448,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.026896,compute,0.026896,0.86067
+V.vit_block.out_proj,V,res_448,uncontended: exclusive HBM channel / NoC link access,0.70,0.016794,compute,0.016794,0.5374
+V.vit_block.out_proj,V,res_448,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.016794,compute,0.016794,0.5374
+V.vit_block.norm_ffn,V,res_448,uncontended: exclusive HBM channel / NoC link access,0.70,0.0032816,bandwidth,0.0048568,0.15542
+V.vit_block.norm_ffn,V,res_448,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.0085322,bandwidth,0.0048568,0.15542
+V.vit_block.ffn_up,V,res_448,uncontended: exclusive HBM channel / NoC link access,0.70,0.067174,compute,0.067174,2.1496
+V.vit_block.ffn_up,V,res_448,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.067174,compute,0.067174,2.1496
+V.vit_block.gelu_act,V,res_448,uncontended: exclusive HBM channel / NoC link access,0.70,0.01312,bandwidth,0.019418,0.62136
+V.vit_block.gelu_act,V,res_448,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.034112,bandwidth,0.019418,0.62136
+V.vit_block.ffn_down,V,res_448,uncontended: exclusive HBM channel / NoC link access,0.70,0.067174,compute,0.067174,2.1496
+V.vit_block.ffn_down,V,res_448,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.067174,compute,0.067174,2.1496
+V.final_norm,V,res_448,uncontended: exclusive HBM channel / NoC link access,0.70,0.0032816,bandwidth,0.0048568,0.0048568
+V.final_norm,V,res_448,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.0085322,bandwidth,0.0048568,0.0048568
+V.proj_head,V,res_448,uncontended: exclusive HBM channel / NoC link access,0.70,0.087327,compute,0.087327,0.087327
+V.proj_head,V,res_448,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.087327,compute,0.087327,0.087327
+V.patch_embed,V,res_896,uncontended: exclusive HBM channel / NoC link access,0.70,0.030828,compute,0.030828,0.030828
+V.patch_embed,V,res_896,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.030828,compute,0.030828,0.030828
+V.vit_block.norm_attn,V,res_896,uncontended: exclusive HBM channel / NoC link access,0.70,0.013112,bandwidth,0.019406,0.62098
+V.vit_block.norm_attn,V,res_896,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.034091,bandwidth,0.019406,0.62098
+V.vit_block.qkv_proj,V,res_896,uncontended: exclusive HBM channel / NoC link access,0.70,0.20138,compute,0.20138,6.444
+V.vit_block.qkv_proj,V,res_896,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.20138,compute,0.20138,6.444
+V.vit_block.attention,V,res_896,uncontended: exclusive HBM channel / NoC link access,0.70,0.42971,compute,0.42971,13.751
+V.vit_block.attention,V,res_896,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.42971,compute,0.42971,13.751
+V.vit_block.out_proj,V,res_896,uncontended: exclusive HBM channel / NoC link access,0.70,0.067125,compute,0.067125,2.148
+V.vit_block.out_proj,V,res_896,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.067125,compute,0.067125,2.148
+V.vit_block.norm_ffn,V,res_896,uncontended: exclusive HBM channel / NoC link access,0.70,0.013112,bandwidth,0.019406,0.62098
+V.vit_block.norm_ffn,V,res_896,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.034091,bandwidth,0.019406,0.62098
+V.vit_block.ffn_up,V,res_896,uncontended: exclusive HBM channel / NoC link access,0.70,0.2685,compute,0.2685,8.592
+V.vit_block.ffn_up,V,res_896,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.2685,compute,0.2685,8.592
+V.vit_block.gelu_act,V,res_896,uncontended: exclusive HBM channel / NoC link access,0.70,0.052442,bandwidth,0.077614,2.4836
+V.vit_block.gelu_act,V,res_896,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.13635,bandwidth,0.077614,2.4836
+V.vit_block.ffn_down,V,res_896,uncontended: exclusive HBM channel / NoC link access,0.70,0.2685,compute,0.2685,8.592
+V.vit_block.ffn_down,V,res_896,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.2685,compute,0.2685,8.592
+V.final_norm,V,res_896,uncontended: exclusive HBM channel / NoC link access,0.70,0.013112,bandwidth,0.019406,0.019406
+V.final_norm,V,res_896,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.034091,bandwidth,0.019406,0.019406
+V.proj_head,V,res_896,uncontended: exclusive HBM channel / NoC link access,0.70,0.34905,compute,0.34905,0.34905
+V.proj_head,V,res_896,contended: sibling chiplet sharing the same HBM channel or NoC link,0.30,0.34905,compute,0.34905,0.34905

@@ -1,0 +1,44 @@
+kernel_id,task,layer_class,op_type,precision,multiplicity,flops_per_instance,total_flops,weight_bytes_per_instance,io_bytes_per_instance,total_bytes,arithmetic_intensity_flops_per_byte,context,note
+A.embed_lookup,A,embedding,lookup,bf16,1,0,0,1.9968e+07,1.9968e+07,3.9936e+07,0,short_chat_L1500,"Gather, not compute: touches only the L rows of the embedding table that are actually used, not the full table."
+A.local_attn_layer.rmsnorm_attn,A,local_attn_layer,norm,bf16,39,4.992e+07,1.94688e+09,13312,3.9936e+07,1.55802e+09,1.25,short_chat_L1500,Pre-attention RMSNorm.
+A.local_attn_layer.qkv_proj,A,local_attn_layer,matmul,bf16,39,9.20125e+10,3.58849e+12,6.13417e+07,3.3792e+07,3.71021e+09,967.2,short_chat_L1500,"local layer, GQA 32Q/2KV."
+A.local_attn_layer.attention,A,local_attn_layer,attention,bf16,39,1.8432e+10,7.18848e+11,0,1.152e+09,4.4928e+10,16,short_chat_L1500,"Windowed causal self-attention, w=2048."
+A.local_attn_layer.out_proj,A,local_attn_layer,matmul,bf16,39,8.17889e+10,3.18977e+12,5.4526e+07,3.2256e+07,3.3845e+09,942.5,short_chat_L1500,Attention output projection.
+A.local_attn_layer.rmsnorm_ffn,A,local_attn_layer,norm,bf16,39,4.992e+07,1.94688e+09,13312,3.9936e+07,1.55802e+09,1.25,short_chat_L1500,Pre-FFN RMSNorm.
+A.local_attn_layer.ffn_gate_up,A,local_attn_layer,matmul,bf16,39,7.97442e+11,3.11002e+13,5.31628e+08,1.39776e+08,2.61848e+10,1188,short_chat_L1500,"SwiGLU gate+up projections, d_ffn=19,968."
+A.local_attn_layer.swiglu_act,A,local_attn_layer,elementwise,bf16,39,8.9856e+07,3.50438e+09,0,1.79712e+08,7.00877e+09,0.5,short_chat_L1500,"SwiGLU activation, elementwise."
+A.local_attn_layer.ffn_down,A,local_attn_layer,matmul,bf16,39,3.98721e+11,1.55501e+13,2.65814e+08,7.9872e+07,1.34818e+10,1153,short_chat_L1500,FFN down-projection back to d_model.
+A.global_attn_layer.rmsnorm_attn,A,global_attn_layer,norm,bf16,13,4.992e+07,6.4896e+08,13312,3.9936e+07,5.19341e+08,1.25,short_chat_L1500,Pre-attention RMSNorm.
+A.global_attn_layer.qkv_proj,A,global_attn_layer,matmul,bf16,13,9.20125e+10,1.19616e+12,6.13417e+07,3.3792e+07,1.23674e+09,967.2,short_chat_L1500,"global layer, GQA 32Q/2KV."
+A.global_attn_layer.attention,A,global_attn_layer,attention,bf16,13,1.8432e+10,2.39616e+11,0,1.152e+09,1.4976e+10,16,short_chat_L1500,Full-context causal self-attention -- the quadratic-in-L term.
+A.global_attn_layer.out_proj,A,global_attn_layer,matmul,bf16,13,8.17889e+10,1.06326e+12,5.4526e+07,3.2256e+07,1.12817e+09,942.5,short_chat_L1500,Attention output projection.
+A.global_attn_layer.rmsnorm_ffn,A,global_attn_layer,norm,bf16,13,4.992e+07,6.4896e+08,13312,3.9936e+07,5.19341e+08,1.25,short_chat_L1500,Pre-FFN RMSNorm.
+A.global_attn_layer.ffn_gate_up,A,global_attn_layer,matmul,bf16,13,7.97442e+11,1.03667e+13,5.31628e+08,1.39776e+08,8.72825e+09,1188,short_chat_L1500,"SwiGLU gate+up projections, d_ffn=19,968."
+A.global_attn_layer.swiglu_act,A,global_attn_layer,elementwise,bf16,13,8.9856e+07,1.16813e+09,0,1.79712e+08,2.33626e+09,0.5,short_chat_L1500,"SwiGLU activation, elementwise."
+A.global_attn_layer.ffn_down,A,global_attn_layer,matmul,bf16,13,3.98721e+11,5.18337e+12,2.65814e+08,7.9872e+07,4.49392e+09,1153,short_chat_L1500,FFN down-projection back to d_model.
+A.final_norm,A,output,norm,bf16,1,4.992e+07,4.992e+07,13312,3.9936e+07,3.99493e+07,1.25,short_chat_L1500,"No LM head in A -- A hands off a hidden state to B, not a token (see A->B edge). Logits are only needed in B (draft proposals) and C (verify + bonus token)."
+B.draft_layer.qkv_proj,B,draft_layer,matmul,bf16,80,8.17889e+07,6.54311e+09,8.17889e+07,25600,6.54516e+09,0.9997,short_chat_L1500,GQA 32Q/8KV. d_model_draft ASSUMED = main's (6656) -- not published.
+B.draft_layer.attention,B,draft_layer,attention,bf16,80,2.4576e+07,1.96608e+09,0,768000,6.144e+07,32,short_chat_L1500,ASSUMED windowed (local-only) attention throughout the draft model; not stated explicitly for the draft in the model card.
+B.draft_layer.out_proj,B,draft_layer,matmul,bf16,80,5.4526e+07,4.36208e+09,5.4526e+07,21504,4.3638e+09,0.9996,short_chat_L1500,Draft attention output projection.
+B.draft_layer.ffn,B,draft_layer,matmul,bf16,80,UNRESOLVED,UNRESOLVED,0,0,0,n/a,short_chat_L1500,UNRESOLVED: draft FFN intermediate width not published. Inspect GGUF tensor shapes to fill in (see Open items).
+B.embed_lookup,B,embedding,lookup,bf16,16,0,0,13312,13312,425984,0,short_chat_L1500,"One gather per micro-step, for the just-committed/proposed token."
+B.lm_head,B,output,matmul,bf16,16,1.70734e+09,2.73175e+10,1.70734e+09,269824,2.73218e+10,0.9998,short_chat_L1500,"Draft logits, one micro-step at a time. VOCAB_SIZE=128,256 ASSUMED (Llama-3-style) -- not published."
+C.local_attn_layer.rmsnorm_attn,C,local_attn_layer,norm,bf16,39,532480,2.07667e+07,13312,425984,1.71325e+07,1.212,short_chat_L1500,"Pre-attention RMSNorm, 16 new positions."
+C.local_attn_layer.qkv_proj,C,local_attn_layer,matmul,bf16,39,9.81467e+08,3.82772e+10,6.13417e+07,360448,2.40638e+09,15.91,short_chat_L1500,Same weights as A.local_attn_layer.qkv_proj -- A and C are excellent candidates to timeshare one chiplet class (see explanation.txt).
+C.local_attn_layer.attention,C,local_attn_layer,attention,bf16,39,3.93216e+08,1.53354e+10,0,768000,2.9952e+07,512,short_chat_L1500,"Windowed -- roughly flat in L, capped at w=2048."
+C.local_attn_layer.out_proj,C,local_attn_layer,matmul,bf16,39,8.72415e+08,3.40242e+10,5.4526e+07,344064,2.13993e+09,15.9,short_chat_L1500,Attention output projection.
+C.local_attn_layer.rmsnorm_ffn,C,local_attn_layer,norm,bf16,39,532480,2.07667e+07,13312,425984,1.71325e+07,1.212,short_chat_L1500,Pre-FFN RMSNorm.
+C.local_attn_layer.ffn_gate_up,C,local_attn_layer,matmul,bf16,39,8.50605e+09,3.31736e+11,5.31628e+08,1.49094e+06,2.07916e+10,15.96,short_chat_L1500,Same weights as A's FFN -- see timeshare note above.
+C.local_attn_layer.swiglu_act,C,local_attn_layer,elementwise,bf16,39,958464,3.73801e+07,0,1.91693e+06,7.47602e+07,0.5,short_chat_L1500,"SwiGLU activation, elementwise."
+C.local_attn_layer.ffn_down,C,local_attn_layer,matmul,bf16,39,4.25302e+09,1.65868e+11,2.65814e+08,851968,1.04e+10,15.95,short_chat_L1500,FFN down-projection.
+C.global_attn_layer.rmsnorm_attn,C,global_attn_layer,norm,bf16,13,532480,6.92224e+06,13312,425984,5.71085e+06,1.212,short_chat_L1500,"Pre-attention RMSNorm, 16 new positions."
+C.global_attn_layer.qkv_proj,C,global_attn_layer,matmul,bf16,13,9.81467e+08,1.27591e+10,6.13417e+07,360448,8.02128e+08,15.91,short_chat_L1500,Same weights as A.global_attn_layer.qkv_proj -- A and C are excellent candidates to timeshare one chiplet class (see explanation.txt).
+C.global_attn_layer.attention,C,global_attn_layer,attention,bf16,13,3.93216e+08,5.11181e+09,0,768000,9.984e+06,512,short_chat_L1500,"16 new positions attend to the FULL context L -- linear-in-L, not quadratic (only 16 new queries, not L of them)."
+C.global_attn_layer.out_proj,C,global_attn_layer,matmul,bf16,13,8.72415e+08,1.13414e+10,5.4526e+07,344064,7.1331e+08,15.9,short_chat_L1500,Attention output projection.
+C.global_attn_layer.rmsnorm_ffn,C,global_attn_layer,norm,bf16,13,532480,6.92224e+06,13312,425984,5.71085e+06,1.212,short_chat_L1500,Pre-FFN RMSNorm.
+C.global_attn_layer.ffn_gate_up,C,global_attn_layer,matmul,bf16,13,8.50605e+09,1.10579e+11,5.31628e+08,1.49094e+06,6.93055e+09,15.96,short_chat_L1500,Same weights as A's FFN -- see timeshare note above.
+C.global_attn_layer.swiglu_act,C,global_attn_layer,elementwise,bf16,13,958464,1.246e+07,0,1.91693e+06,2.49201e+07,0.5,short_chat_L1500,"SwiGLU activation, elementwise."
+C.global_attn_layer.ffn_down,C,global_attn_layer,matmul,bf16,13,4.25302e+09,5.52893e+10,2.65814e+08,851968,3.46666e+09,15.95,short_chat_L1500,FFN down-projection.
+C.embed_lookup,C,embedding,lookup,bf16,1,0,0,212992,212992,425984,0,short_chat_L1500,Gather for the 16 proposed-block token IDs.
+C.lm_head,C,output,matmul,bf16,1,2.73175e+10,2.73175e+10,1.70734e+09,4.31718e+06,1.71166e+09,15.96,short_chat_L1500,Target-model logits at all 16 positions in one matmul -- needed for the rejection-sampling ratio AND the bonus token. VOCAB_SIZE ASSUMED (see B.lm_head).
+D.reject_sample_compare,D,control,reduce_argmax,fp32,1,2.0521e+06,2.0521e+06,0,1.64168e+07,1.64168e+07,0.125,short_chat_L1500,Rejection-sampling ratio test per position: draft vs. target probability. Tiny FLOPs; the real cost of D is the KV-cache write already modeled as the C->D inter-node edge in workload_dag.py.

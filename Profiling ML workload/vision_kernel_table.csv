@@ -1,0 +1,12 @@
+kernel_id,task,layer_class,op_type,precision,multiplicity,flops_per_instance,total_flops,weight_bytes_per_instance,io_bytes_per_instance,total_bytes,arithmetic_intensity_flops_per_byte,context,note
+V.patch_embed,V,embedding,matmul,bf16,1,1.54141e+09,1.54141e+09,1.50528e+06,2.624e+06,4.12928e+06,373.3,res_448,"Patchify + linear project, treated as one strided-conv-as-matmul. Fixed-size single pass -- no loop, unlike the spec-decode workload."
+V.vit_block.norm_attn,V,vit_block,norm,bf16,32,6.56e+06,2.0992e+08,2560,5.248e+06,1.68018e+08,1.249,res_448,"LayerNorm, pre-attention."
+V.vit_block.qkv_proj,V,vit_block,matmul,bf16,32,1.00762e+10,3.22437e+11,9.8304e+06,1.0496e+07,6.50445e+08,495.7,res_448,"Standard MHA (ASSUMED, no GQA) -- 16 heads x 80 dim."
+V.vit_block.attention,V,vit_block,attention,bf16,32,5.3792e+09,1.72134e+11,0,5.248e+06,1.67936e+08,1025,res_448,"FULL bidirectional self-attention -- every patch attends to every other patch, no causal mask, no window. Quadratic in num_tokens, which itself is quadratic in image resolution -- a steeper wall than the text model's windowed-by-default local layers."
+V.vit_block.out_proj,V,vit_block,matmul,bf16,32,3.35872e+09,1.07479e+11,3.2768e+06,5.248e+06,2.72794e+08,394,res_448,Attention output projection.
+V.vit_block.norm_ffn,V,vit_block,norm,bf16,32,6.56e+06,2.0992e+08,2560,5.248e+06,1.68018e+08,1.249,res_448,"LayerNorm, pre-FFN."
+V.vit_block.ffn_up,V,vit_block,matmul,bf16,32,1.34349e+10,4.29916e+11,1.31072e+07,1.312e+07,8.3927e+08,512.2,res_448,"MLP up-projection, single matmul (GELU, not SwiGLU -- no gate)."
+V.vit_block.gelu_act,V,vit_block,elementwise,bf16,32,1.0496e+07,3.35872e+08,0,2.0992e+07,6.71744e+08,0.5,res_448,"GELU activation, elementwise."
+V.vit_block.ffn_down,V,vit_block,matmul,bf16,32,1.34349e+10,4.29916e+11,1.31072e+07,1.312e+07,8.3927e+08,512.2,res_448,MLP down-projection.
+V.final_norm,V,output,norm,bf16,1,6.56e+06,6.56e+06,2560,5.248e+06,5.25056e+06,1.249,res_448,Final LayerNorm.
+V.proj_head,V,output,matmul,bf16,1,1.74653e+10,1.74653e+10,1.70394e+07,1.62688e+07,3.33082e+07,524.4,res_448,"Cross-modal projection: d_vis=1,280 -> d_model=6,656 so image tokens can join the main LM's context (feeds into task A's prefill in the text workload)."

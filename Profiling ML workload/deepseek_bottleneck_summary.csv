@@ -1,0 +1,13 @@
+context_regime,task,task_expected_latency_ms,dominant_kernel,dominant_kernel_share,dominant_bound_type
+short_chat_L1500,ATTN,10.25,ATTN.csa.grouped_out_proj,25.5%,bandwidth
+short_chat_L1500,MOE,5.086,MOE.routed_expert_ffn_learned,55.0%,bandwidth
+short_chat_L1500,MHC,1.018e-05,MHC.sinkhorn_iterate,100.0%,bandwidth
+short_chat_L1500,OUT,1.94,OUT.lm_head,50.0%,bandwidth
+long_agent_L128000,ATTN,10.33,ATTN.csa.grouped_out_proj,25.3%,bandwidth
+long_agent_L128000,MOE,5.086,MOE.routed_expert_ffn_learned,55.0%,bandwidth
+long_agent_L128000,MHC,1.018e-05,MHC.sinkhorn_iterate,100.0%,bandwidth
+long_agent_L128000,OUT,1.94,OUT.lm_head,50.0%,bandwidth
+long_agent_L1000000,ATTN,10.9,ATTN.csa.grouped_out_proj,23.9%,bandwidth
+long_agent_L1000000,MOE,5.086,MOE.routed_expert_ffn_learned,55.0%,bandwidth
+long_agent_L1000000,MHC,1.018e-05,MHC.sinkhorn_iterate,100.0%,bandwidth
+long_agent_L1000000,OUT,1.94,OUT.lm_head,50.0%,bandwidth
